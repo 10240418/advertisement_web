@@ -1,73 +1,104 @@
 <template>
-  <div class="weather-footer">
-    <div class="weather-footer-left">
-      <div class="weather-footer-left-item">
-        <!-- Display formatted date -->
-        <p class="p-title">
-          {{
-            new Date(weatherData_today?.temperature?.recordTime || new Date()).toLocaleDateString(
-              'zh-CN',
-              {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-              }
-            )
-          }}
-        </p>
-        <!-- Display day of the week -->
-        <p class="p-title">
-          {{
-            new Date(weatherData_today?.temperature?.recordTime || new Date()).toLocaleDateString(
-              'zh-CN',
-              {
-                weekday: 'long'
-              }
-            )
-          }}
-        </p>
-        <div class="div-today">
-          <!-- <img
-            :src="`src/assets/weatherIcons/pic${weatherData_today?.icon[0]}.png`"
-            :alt="`pic${weatherData_today?.icon[0]}`"
-          /> -->
-          <img :src="getWeatherIcon(weatherData_today?.icon[0] || 50)" alt="" />
-          <!-- Display temperature for "九龙城" -->
-          <p class="p-content">
-            {{
-              weatherData_today?.temperature?.data.find((item) => item.place === '九龙城')?.value
-            }}°C
-          </p>
-        </div>
-        <!-- <p class="p-content">
-          {{ getWeatherDetails(weatherData_today?.icon[0] || 50) }}
-        </p> -->
+  <div class="w-full h-full bg-white">
+    <div class="w-full h-full flex justify-between gap-4 p-4">
+      <!-- Left Section - Today's Weather -->
+      <div class="w-1/4 flex flex-col bg-white rounded-xl border border-grey p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+        <!-- 使用grid布局将左侧分为2x2的格子 -->
+        <div class="grid grid-cols-2 grid-rows-2 gap-3 h-full">
+          <!-- Top Left: Date & Time -->
+          <div class="flex flex-col justify-center items-center">
+            <p class="text-2xl font-semibold text-primary">
+              {{
+                new Date(weatherData_today?.temperature?.recordTime || new Date()).toLocaleDateString(
+                  'zh-CN',
+                  { month: '2-digit', day: '2-digit' }
+                )
+              }}
+            </p>
+            <p class="text-sm font-medium text-neutral/80">
+              {{
+                new Date(weatherData_today?.temperature?.recordTime || new Date()).toLocaleDateString(
+                  'zh-CN',
+                  { weekday: 'long' }
+                )
+              }}
+            </p>
+          </div>
 
-        <div v-for="(warning, key) in weatherData_warning" :key="key">
-          <p class="p-content">{{ warning.name }}</p>
+          <!-- Top Right: Temperature -->
+          <div class="flex flex-col justify-center items-center">
+            <p class="text-3xl font-semibold text-primary">
+              {{
+                weatherData_today?.temperature?.data.find((item) => item.place === '九龙城')?.value
+              }}°
+            </p>
+            <p class="text-xs font-medium text-neutral/80">九龙城</p>
+          </div>
+
+          <!-- Bottom Left: Weather Icon -->
+          <div class="flex justify-center items-center">
+            <img 
+              :src="getWeatherIcon(weatherData_today?.icon[0] || 50)" 
+              alt="Weather Icon"
+              class="w-16 h-16 object-contain filter-primary"
+            />
+          </div>
+
+          <!-- Bottom Right: Weather Warnings -->
+          <div class="flex flex-col justify-center gap-1.5 overflow-auto">
+            <div 
+              v-for="(warning, key) in weatherData_warning" 
+              :key="key"
+              class="px-2 py-1 bg-accent/5 rounded-lg border border-accent/10"
+            >
+              <p class="text-[10px] font-medium text-accent/90 text-center truncate">
+                {{ warning.name }}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="weather-footer-right">
-      <div
-        v-for="(forecast, index) in weatherData_forecast?.weatherForecast?.slice(0, 5)"
-        :key="index"
-        class="weather-footer-right-item"
-      >
-        <!-- 这换成月份和日,不需要年份 -->
-        <div v-if="index === 0" class="p-content-right-week-temperature">Tomorrow</div>
-        <div v-else class="p-content-right-week-temperature">{{ forecast?.week?.slice(0, 3) }}</div>
-        <!-- <img
-          :src="`src/assets/weatherIcons/pic${forecast?.ForecastIcon}.png`"
-          :alt="`pic${forecast?.ForecastIcon}`"
-        /> -->
-        <img :src="getWeatherIcon(forecast?.ForecastIcon || 50)" alt="" />
-        <!-- <p class="p-content">
-          {{ getWeatherDetails(forecast?.ForecastIcon || 50) }}
-        </p> -->
-        <p class="p-content-right-week-temperature">
-          {{ forecast?.forecastMintemp?.value }}°C~{{ forecast?.forecastMaxtemp?.value }}°C
-        </p>
+
+      <!-- Right Section - Forecast -->
+      <div class="flex-1 bg-white rounded-xl p-4 border border-grey shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+        <div class="grid grid-cols-5 gap-3 h-full">
+          <div
+            v-for="(forecast, index) in weatherData_forecast?.weatherForecast?.slice(0, 5)"
+            :key="index"
+            class="flex flex-col items-center justify-between py-1.5"
+          >
+            <!-- Day Label -->
+            <div 
+              :class="[
+                'px-3 py-1 rounded-lg text-xs font-medium w-full text-center',
+                index === 0 
+                  ? 'bg-primary/10 text-primary/90' 
+                  : 'bg-neutral/5 text-neutral/80'
+              ]"
+            >
+              {{ index === 0 ? 'Tomorrow' : forecast?.week?.slice(0, 3) }}
+            </div>
+
+            <!-- Weather Icon -->
+            <div class="flex-1 flex items-center">
+              <img 
+                :src="getWeatherIcon(forecast?.ForecastIcon || 50)" 
+                alt="Forecast Icon"
+                class="w-14 h-14 object-contain filter-primary"
+              />
+            </div>
+
+            <!-- Temperature Range -->
+            <div class="flex flex-col items-center gap-0.5">
+              <p class="text-base font-semibold text-primary/90">
+                {{ forecast?.forecastMaxtemp?.value }}°
+              </p>
+              <p class="text-xs text-neutral/70">
+                {{ forecast?.forecastMintemp?.value }}°
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -288,91 +319,13 @@ onMounted(() => {
       // console.log(weatherData_warning.value)
     })
 })
+
+// 修改图标颜色的样式，降低一点饱和度和对比度
+const style = document.createElement('style')
+style.textContent = `
+  .filter-primary {
+    filter: brightness(0) saturate(100%) invert(40%) sepia(75%) saturate(1500%) hue-rotate(198deg) brightness(98%) contrast(98%);
+  }
+`
+document.head.appendChild(style)
 </script>
-
-<style lang="scss" scoped>
-.weather-footer {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(358.97deg, #ffa500 -12.36%, #ffffff 189.94%);
-  display: flex;
-  direction: row;
-  padding: 10px 0px;
-  justify-content: space-between;
-  img {
-    width: 80px;
-    height: 80px;
-    color: #fff;
-    filter: brightness(0) invert(1); /* 设置 SVG 图标的颜色 */
-    filter: drop-shadow(0 0 1px #fff) brightness(0) invert(1);
-  }
-  .weather-footer-left {
-    width: 20%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    .weather-footer-left-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center; // 确保子元素水平居中
-      justify-content: center; // 确保子元素垂直居中
-      gap: 4px;
-      width: 100%; // 占满父容器的宽度
-      .div-today {
-        display: flex;
-        flex-direction: row;
-        align-items: end;
-        justify-content: end;
-      }
-
-      .p-title {
-        color: #fff;
-        font-family: 'Adelle Sans Devanagari';
-        font-size: 32px;
-        font-style: normal;
-        font-weight: 700;
-        line-height: 30px; /* 125% */
-      }
-      .p-content {
-        color: #fff;
-        text-align: center;
-        font-family: 'Adelle Sans Devanagari';
-        font-size: 24px;
-        font-style: normal;
-        font-weight: 400;
-        line-height: 30px; /* 125% */
-      }
-    }
-  }
-  .weather-footer-right {
-    width: 74%;
-    display: flex;
-    justify-content: row;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 0;
-    column-gap: 10px;
-    gap: 3%;
-    .p-content-right-week-temperature {
-      color: #fff;
-      font-family: 'Adelle Sans Devanagari';
-
-      font-size: 28px;
-      font-style: normal;
-      font-weight: 400;
-      line-height: 28px;
-      letter-spacing: 0.12px;
-    }
-  }
-  .weather-footer-right-item {
-    margin-bottom: 0px;
-    display: flex;
-    flex-direction: column;
-    row-gap: 0px;
-    align-items: center;
-    font-weight: 800;
-  }
-}
-</style>

@@ -34,17 +34,21 @@ defineProps<Props>()
 const currentPage = ref<number>(1)
 const emit = defineEmits<{
   (event: 'page-selected', page: number): void
+  (event: 'total-pages', total: number): void
+  (event: 'page-change', page: number): void
 }>()
 
 const selectPage = (page: number) => {
   console.log('selectPage', page)
-  // currentPage.value = page
+  currentPage.value = page
   emit('page-selected', page)
+  emit('page-change', page)
 }
 
 const handlePageChange = (page: number) => {
   console.log('handlePageChange', page)
   currentPage.value = page
+  emit('page-change', page)
 }
 
 const thumbnailsContainer = ref<HTMLElement | null>(null)
@@ -153,6 +157,12 @@ const cleanup = () => {
 
 const handlePdfInit = async (pdf: any) => {
   console.log('PDF Initialized:', pdf)
+  const totalPages = pdf.numPages
+  console.log('PDF Total Pages:', totalPages)
+  
+  // 发送总页数
+  emit('total-pages', totalPages)
+  
   await nextTick()
   addPageNumbersAndEvents()
   attachEventListener()

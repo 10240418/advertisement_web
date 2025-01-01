@@ -1,45 +1,81 @@
-import { defineStore } from 'pinia'
-export const adsStore = defineStore('ads', {
-  state: () => {
-    return {
-      ads: [] as any[],
-      ads_hasDownload: [] as any[],
-      ads_hasDownload_path: [] as any[]
-    }
-  },
+import { defineStore } from 'pinia';
+
+import type { Advertisement } from '@renderer/apis';
+
+interface DownloadedAd {
+  advertisement: Advertisement;
+  downloadPath: string;
+}
+
+export const useAdsStore = defineStore('ads', {
+  state: () => ({
+    advertisements: [] as Advertisement[],
+    downloadedAds: [] as DownloadedAd[],
+  }),
+
   getters: {
-    getAds: (state) => state.ads,
-    getAds_hasDownload: (state) => state.ads_hasDownload,
-    getAds_hasDownload_path: (state) => state.ads_hasDownload_path
+    // 获取所有广告
+    getAllAds: (state) => state.advertisements,
+
+    // 获取已下载的广告
+    getDownloadedAds: (state) => state.downloadedAds,
+
+    // 根据显示位置获取广告
+    getAdsByDisplay: (state) => (display: Advertisement['display']) =>
+      state.advertisements.filter(ad => ad.display === display),
+
+    // 获取激活的广告
+    getActiveAds: (state) =>
+      state.advertisements.filter(ad => ad.status === 'active'),
+
+    // 检查广告是否已下载
+    isAdDownloaded: (state) => (adId: number) =>
+      state.downloadedAds.some(item => item.advertisement.id === adId),
+
+    // 根据类型获取广告
+    getAdsByType: (state) => (type: Advertisement['type']) =>
+      state.advertisements.filter(ad => ad.type === type),
   },
+
   actions: {
-    setAds(ads: any[]) {
-      this.ads = ads
+    // 设置广告列表
+    setAds(ads: Advertisement[]) {
+      this.advertisements = ads;
     },
-    setAds_hasDownload(ads: any[]) {
-      this.ads_hasDownload = ads
-    },
-    setAds_hasDownload_path(ads: any[]) {
-      this.ads_hasDownload_path = ads
-    },
-    addAds(ad: any) {
-      const exists = this.ads.some((existingAd) => existingAd.ID === ad.ID)
-      if (!exists) {
-        this.ads.push(ad)
+
+    // 添加已下载的广告
+    addDownloadedAd(ad: Advertisement, downloadPath: string) {
+      if (!this.isAdDownloaded(ad.id)) {
+        this.downloadedAds.push({
+          advertisement: ad,
+          downloadPath
+        });
       }
     },
-    addAds_hasDownload(ad: any) {
-      if (this.ads_hasDownload.find((item) => item.Advertisement.ID === ad.Advertisement.ID)) {
-        return
-      }
-      this.ads_hasDownload.push(ad)
+
+    // 移除已下载的广告
+    removeDownloadedAd(adId: number) {
+      this.downloadedAds = this.downloadedAds.filter(
+        item => item.advertisement.id !== adId
+      );
     },
-    addAds_hasDownload_path(ad: any) {
-      if (this.ads_hasDownload_path.find((item) => item.AdvertisementID === ad.AdvertisementID)) {
-        return
+
+    // 更新广告
+    updateAd(updatedAd: Advertisement) {
+      const index = this.advertisements.findIndex(
+        ad => ad.id === updatedAd.id
+      );
+      if (index !== -1) {
+        this.advertisements[index] = updatedAd;
       }
-      this.ads_hasDownload_path.push(ad)
+    },
+
+    // 清空所有广告
+    clearAds() {
+      this.advertisements = [];
+      this.downloadedAds = [];
     }
   },
+
   persist: true
-})
+});

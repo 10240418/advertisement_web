@@ -6,3 +6,7 @@ out
 src/renderer/src/assets/img/*
 src/renderer/src/assets/video/*
 src/renderer/src/assets/pdf/*
+.history
+/ad
+/static
+/notice

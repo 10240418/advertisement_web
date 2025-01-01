@@ -30,7 +30,7 @@ const notifications = computed(() => notificationStore.notifications)
 <style scoped>
 .notification-container {
   position: fixed;
-  bottom: 225px;
+  bottom: 100px;
   width: 100%;
   height: 20px;
   flex-shrink: 0;

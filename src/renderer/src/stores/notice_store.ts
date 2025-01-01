@@ -1,73 +1,86 @@
-import { defineStore } from 'pinia'
+import { defineStore } from 'pinia';
 
-export interface Notice {
-  id: number
-  mess_title: string
-  mess_type: string
-  mess_file: string
-  path?: string
+import type { Notice } from '@renderer/apis';
+
+interface DownloadedNotice {
+  notice: Notice;
+  downloadPath: string;
 }
-// {
-//   "id": 771,
-//   "mess_title": "訪客須知",
-//   "mess_type": "common",
-//   "mess_file": "https://72ismart.s3.amazonaws.com/blg_mess/0038300/pdf/a9934c3885ae4f30ab6269eb9e75a0be_05_%E8%A8%AA%E5%AE%A2%E9%A0%88%E7%9F%A5_%E4%B8%AD%E6%96%87%E7%89%88_%E8%AD%A6%E5%8B%99%E8%99%95.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIA6HKTBTYTEZNANK7Z%2F20241122%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20241122T161601Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjECgaCWFwLWVhc3QtMSJHMEUCIQDLQPm%2FP1SMtyt7QmgtD0Q31D3fnchn5aR8UoAzRy2doAIgTUrar22dMfWf8RU%2FVYIA%2FvnJj08n2qEIRwNCa2TId7cqjwMIwf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARADGgw5Nzc4MTYxMDAzOTAiDDdUaJXwbJ6clqrq5yrjAqSDx9LRZmKbKlN5Srh3thLTlZK7f6fpvtoJUWHf1hObuoRR2C59AAZ5aPNAsTiAZgahP%2F6qKHMt1%2Bbp8FP4BOZycCsBfXOA3I4Loetz8TPQNhpNMU8oAFw1Z1ks9eb9gvQVjC5k%2Bf8LpiBz2Ph5rJVeWOO9MkxqHTGGIFa8q8OyDKjYTZLaTs2hSEPoUtHYWb5peP%2FOrNGykiu665FXt5Rut2dif%2BHO13qHz%2BJUDw%2BTVaAYQk%2BNQLbGVyrBUpgXhtXHZDApQ%2FcJWgLthiJrWrvkbH8LyI4ZnP9ITrpnKcsMQcJ%2BXey%2BLOl5%2BTATpJJt224VHFJz2yS73%2Fq9ZiDUsPuPowPLOms93flO03U4j6uLyNi3B7ElhOZjY9aZYgGhDW3iZYYE3ONJ7%2F6lbcQl5pj9yM%2B9zs6KJkGTVoj9R5qioVPtJPdfDeaLcsCKC%2FjlK6FsOLgXq3B4B0UPIb%2FRkvyWyPowvdyCugY6ngFwIfOSo3kKz35%2FTsvoZmU524TgfCNPWmwml1eXBqTU%2F4BBXorV6Eu72tFRm0GPhDilcfw6SS%2BDyszMKUPMnMWGbLpxJm0hqTnyHNNFCHECu4AMFeRRUCVqtwwt3TsXhRwP6o3InJYxv3ksf69TjTfGoaJmo4UeLDYJ9NC0TpVFGfZWRSszKubQBtDNiuyGQsymfrqGQGR5GE0YMuTvyA%3D%3D&X-Amz-Signature=03c0f5134c78efebef14183d1c0778a42b998c8d19bc89c7146fe50ae565733e"
-// },
-// {
-export const noticeStore = defineStore('notice', {
-  state: () => {
-    return {
-      notices: [] as Notice[],
-      notices_common: [] as Notice[],
-      notices_adv: [] as Notice[],
-      //TODO: 添加其他通知类型
 
-      notices_hasDownload_common: [] as Notice[],
-      notices_hasDownload_adv: [] as Notice[]
-    }
-  },
+export const useNoticeStore = defineStore('notice', {
+  state: () => ({
+    notices: [] as Notice[],
+    downloadedNotices: [] as DownloadedNotice[],
+  }),
+
   getters: {
-    getNotices_common: (state) => state.notices_common,
-    getNotices_adv: (state) => state.notices_adv,
-    getAllNotices: (state) => state.notices,
-    getNotices_hasDownload_common: (state) => state.notices_hasDownload_common,
-    getNotices_hasDownload_adv: (state) => state.notices_hasDownload_adv
+    // 根据类型获取通知
+    getNoticesByType: (state) => (type: Notice['type']) => 
+      state.notices.filter(notice => notice.type === type),
+
+    // 获取紧急通知
+    urgentNotices: (state) => 
+      state.notices.filter(notice => notice.type === 'urgent'),
+
+    // 获取普通通知  
+    commonNotices: (state) => 
+      state.notices.filter(notice => notice.type === 'common'),
+
+    // 获取政府通知
+    governmentNotices: (state) => 
+      state.notices.filter(notice => notice.type === 'government'),
+
+    // 获取系统通知
+    systemNotices: (state) => 
+      state.notices.filter(notice => notice.type === 'system'),
+
+    // 获取已下载的通知
+    getDownloadedNotices: (state) => state.downloadedNotices,
+
+    // 检查通知是否已下载
+    isNoticeDownloaded: (state) => (noticeId: number) => 
+      state.downloadedNotices.some(item => item.notice.id === noticeId)
   },
+
   actions: {
-    setNotices_common(notices: Notice[]) {
-      this.notices_common = notices
-    },
-    setNotices_adv(notices: Notice[]) {
-      this.notices_adv = notices
-    },
+    // 设置所有通知
     setNotices(notices: Notice[]) {
-      this.notices = notices
+      this.notices = notices;
     },
-    setNotices_hasDownload_common(notices: Notice[]) {
-      this.notices_hasDownload_common = notices
-    },
-    setNotices_hasDownload_adv(notices: Notice[]) {
-      this.notices_hasDownload_adv = notices
-    },
-    addNotices_hasDownload_common(notice: Notice) {
-      if (this.notices_hasDownload_common.find((item) => item.id === notice.id)) {
-        return
+
+    // 添加已下载的通知
+    addDownloadedNotice(notice: Notice, downloadPath: string) {
+      if (!this.isNoticeDownloaded(notice.id)) {
+        this.downloadedNotices.push({
+          notice,
+          downloadPath
+        });
       }
-      this.notices_hasDownload_common.push(notice)
     },
-    addNotices_hasDownload_adv(notice: Notice) {
-      if (this.notices_hasDownload_adv.find((item) => item.id === notice.id)) {
-        return
+
+    // 移除已下载的通知
+    removeDownloadedNotice(noticeId: number) {
+      this.downloadedNotices = this.downloadedNotices.filter(
+        item => item.notice.id !== noticeId
+      );
+    },
+
+    // 更新通知
+    updateNotice(updatedNotice: Notice) {
+      const index = this.notices.findIndex(
+        notice => notice.id === updatedNotice.id
+      );
+      if (index !== -1) {
+        this.notices[index] = updatedNotice;
       }
-      this.notices_hasDownload_adv.push(notice)
     },
+
+    // 清空所有通知
     clearNotices() {
-      this.notices = []
-      this.notices_common = []
-      this.notices_adv = []
-      this.notices_hasDownload_common = []
-      this.notices_hasDownload_adv = []
+      this.notices = [];
+      this.downloadedNotices = [];
     }
   },
+
   persist: true
-})
+});

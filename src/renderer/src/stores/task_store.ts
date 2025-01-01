@@ -1,113 +1,129 @@
-import { defineStore } from 'pinia'
-import { useNotificationStore } from './noticefication_store'
-import { timeTask } from '../utils/time-task'
+import { defineStore } from 'pinia';
+import { timeTask } from '@renderer/utils/time-task';
+import { useNotificationStore } from './noticefication_store';
 
 export const useTaskStore = defineStore('task', {
   state: () => ({
-    // 定时任务的时间间隔（以分钟为单位）
-    updateInterval: 1 as number,
-    // 定时任务的定时器 ID
-    timerId: null as NodeJS.Timeout | null,
-
-    // 倒计时定时器 ID
-    countdownTimer: null as NodeJS.Timeout | null,
-    // 倒计时剩余时间（以秒为单位）
-    countdown: 60 as number,
-    // 标志任务是否正在运行，防止重叠执行
-    isRunning: false as boolean
+    isRunning: false as boolean,
+    retryCount: 0 as number,
+    maxRetries: 3 as number,
+    // 添加三种不同数据的更新间隔(分钟)
+    arrearageInterval: 5 as number,  // 欠费数据更新间隔
+    pdfInterval: 10 as number,       // PDF数据更新间隔
+    adsInterval: 15 as number,       // 广告数据更新间隔
+    // 存储各个定时器ID
+    scheduledTaskIds: {
+      arrearage: null as number | null,
+      pdf: null as number | null,
+      ads: null as number | null
+    },
+    updateIntervals: {
+      arrearage: 5,  // 欠费数据更新间隔(分钟)
+      pdf: 10,       // PDF数据更新间隔(分钟)
+      ads: 15        // 广告数据更新间隔(分钟)
+    }
   }),
+
   getters: {
-    // 格式化后的倒计时显示
-    formattedCountdown(state): string {
-      const minutes = Math.floor(state.countdown / 60)
-      const seconds = state.countdown % 60
-      return `${minutes}分 ${seconds}秒`
+    canRetry(state): boolean {
+      return state.retryCount < state.maxRetries;
     }
   },
+
   actions: {
-    // set time task interval
-    setUpdateInterval(interval: number) {
-      this.updateInterval = interval
-      localStorage.setItem('updateInterval', interval.toString())
+    // 设置各类数据的更新间隔
+    setInterval(type: 'arrearage' | 'pdf' | 'ads', minutes: number) {
+      const intervalMap = {
+        arrearage: 'arrearageInterval',
+        pdf: 'pdfInterval',
+        ads: 'adsInterval'
+      };
+      this[intervalMap[type]] = Math.max(1, minutes);
     },
-    // set time task timer id
-    setTimerId(id: NodeJS.Timeout | null) {
-      this.timerId = id
-    },
-    // start time task
-    startScheduledTask() {
-      const notificationStore = useNotificationStore()
-      if (this.timerId) {
-        clearInterval(this.timerId)
-        this.timerId = null
-      }
 
-      if (this.updateInterval > 0) {
-        const intervalMs = this.updateInterval * 60 * 1000
-        this.timerId = setInterval(async () => {
-          if (!this.isRunning) {
-            this.isRunning = true
-            await timeTask()
-            this.isRunning = false
-            this.resetCountdown()
-          }
-        }, intervalMs)
-        // notificationStore.addNotification('task adsStore: update success', 'success')
+    // 开始所有定时任务
+    startAllTasks() {
+      this.startTask('arrearage');
+      this.startTask('pdf');
+      this.startTask('ads');
+    },
 
-        this.resetCountdown()
-        this.startCountdown(this.updateInterval * 60)
-      } else {
-        notificationStore.addNotification('請輸入有效時間間隔', 'error')
+    // 开始单个定时任务
+    startTask(type: 'arrearage' | 'pdf' | 'ads') {
+      // 先清除现有的定时器
+      this.stopTask(type);
+      
+      const intervalMap = {
+        arrearage: this.arrearageInterval,
+        pdf: this.pdfInterval,
+        ads: this.adsInterval
+      };
+
+      // 设置新的定时器
+      this.scheduledTaskIds[type] = window.setInterval(() => {
+        this.executeTask(type);
+      }, intervalMap[type] * 60 * 1000);
+
+      // 立即执行一次
+      this.executeTask(type);
+    },
+
+    // 停止单个定时任务
+    stopTask(type: 'arrearage' | 'pdf' | 'ads') {
+      if (this.scheduledTaskIds[type] !== null) {
+        clearInterval(this.scheduledTaskIds[type]!);
+        this.scheduledTaskIds[type] = null;
       }
     },
-    // stop time task
-    stopScheduledTask() {
-      const notificationStore = useNotificationStore()
 
-      if (this.timerId) {
-        clearInterval(this.timerId) // clear time task timer
-        this.timerId = null
-        notificationStore.addNotification('定時任務已停止', 'success')
-      }
-      // stop countdown
-      this.stopCountdown()
+    // 停止所有定时任务
+    stopAllTasks() {
+      Object.keys(this.scheduledTaskIds).forEach(type => {
+        this.stopTask(type as keyof typeof this.scheduledTaskIds);
+      });
     },
-    // start countdown
-    startCountdown(duration: number) {
-      this.countdown = duration
-      if (this.countdownTimer) {
-        clearInterval(this.countdownTimer)
-      }
-      this.countdownTimer = setInterval(() => {
-        if (this.countdown > 0) {
-          this.countdown--
+
+    async executeTask(type: 'arrearage' | 'pdf' | 'ads') {
+      if (this.isRunning) return;
+
+      try {
+        this.isRunning = true;
+        await timeTask(type);
+        this.retryCount = 0;
+      } catch (error) {
+        console.error(`Task execution failed (${type}):`, error);
+        const notificationStore = useNotificationStore();
+        
+        if (this.canRetry) {
+          this.retryCount++;
+          notificationStore.addNotification(
+            `${type}任務執行失敗，正在重試 (${this.retryCount}/${this.maxRetries})`,
+            'warning'
+          );
+          // 5秒后重试
+          setTimeout(() => this.executeTask(type), 5000);
         } else {
-          this.resetCountdown()
+          notificationStore.addNotification(`${type}任務執行失敗，已達到最大重試次數`, 'error');
+          this.retryCount = 0;
         }
-      }, 1000)
-    },
-    // reset countdown
-    resetCountdown() {
-      this.countdown = this.updateInterval * 60
-    },
-    // stop countdown
-    stopCountdown() {
-      if (this.countdownTimer) {
-        clearInterval(this.countdownTimer)
-        this.countdownTimer = null
+      } finally {
+        this.isRunning = false;
       }
-      this.countdown = 0
     },
-    // initialize time task (call when app start)
+
+    // 初始化任务
     initialize() {
-      const savedInterval = localStorage.getItem('updateInterval')
-      if (savedInterval) {
-        this.updateInterval = Number(savedInterval)
+      const isLoggedIn = localStorage.getItem('ismartId') && localStorage.getItem('password');
+      if (isLoggedIn) {
+        this.startAllTasks();
       }
-      if (this.updateInterval > 0) {
-        this.startScheduledTask()
-        useNotificationStore().addNotification('重啓定時任務成功', 'success')
-      }
+    },
+
+    setUpdateInterval(type: 'arrearage' | 'pdf' | 'ads', minutes: number) {
+      this.updateIntervals[type] = Math.max(1, minutes);
+      // 重启对应的定时任务
+      this.stopTask(type);
+      this.startTask(type);
     }
   }
-})
+});

@@ -1,205 +1,121 @@
 <!-- src/renderer/src/views/setting/setting.vue -->
 <template>
-  <div class="settings-container">
-    <!-- Login Form -->
-    <div class="form-groups">
-      <div class="auth-bind-label">账户绑定</div>
-      <div class="form-group">
-        <label class="form-label">用户名:</label>
-        <input
-          id="username"
-          v-model="loginData.user_name"
-          class="form-input"
-          type="text"
-          required
-        />
-      </div>
-      <div class="form-group">
-        <label class="form-label">密码:</label>
-        <input
-          id="password"
-          v-model="loginData.password"
-          class="form-input"
-          type="password"
-          required
-        />
-      </div>
-      <div class="form-group">
-        <button class="form-button" @click="handleLogin">绑定</button>
+  <div class="p-8 flex items-center justify-center">
+    <div class="w-full max-w-2xl bg-white rounded-xl border border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-8">
+      <!-- Login Form -->
+      <div class="space-y-8">
+        <h1 class="text-4xl font-bold text-center tracking-wider text-gray-900">
+          账户绑定
+        </h1>
+        
+        <div class="space-y-6">
+          <div class="relative">
+            <label 
+              for="username"
+              class="block text-lg font-semibold text-gray-700 mb-2"
+            >
+              用户名
+            </label>
+            <input
+              id="username"
+              v-model="loginData.ismartId"
+              type="text"
+              class="w-full h-14 px-4 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-lg"
+              required
+            />
+          </div>
+
+          <div class="relative">
+            <label 
+              for="password"
+              class="block text-lg font-semibold text-gray-700 mb-2"
+            >
+              密码
+            </label>
+            <input
+              id="password"
+              v-model="loginData.password"
+              type="password"
+              class="w-full h-14 px-4 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-lg"
+              required
+            />
+          </div>
+
+          <button 
+            class="w-full h-14 bg-[#007AFF] hover:bg-blue-600 text-white font-bold text-lg rounded-lg shadow-lg transition-colors duration-200 flex items-center justify-center tracking-wider"
+            @click="handleLogin"
+          >
+            绑定
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { loginBuilding } from '@renderer/apis/building/buildings'
-import { adsStore } from '@renderer/stores/ads_store'
-import { useRouter } from 'vue-router'
-import { useNotificationStore } from '@renderer/stores/noticefication_store'
-import { buildingStore } from '@renderer/stores/building_store'
-import { downloadAllAds } from '@renderer/utils/time-task'
-import { useTaskStore } from '@renderer/stores/task_store'
-import { noticeStore } from '@renderer/stores/notice_store'
-import { getNotices } from '@renderer/apis/notice/notice'
-import { downloadAllPDFs } from '@renderer/utils/time-task'
-const notificationStore = useNotificationStore()
+import { ref } from 'vue';
 
-const router = useRouter()
-const selectedBuilding = ref<string>('')
+import { useRouter } from 'vue-router';
+
+import type { LoginRequest } from '@renderer/apis';
+import api from '@renderer/apis';
+import { useAdsStore } from '@renderer/stores/ads_store';
+import { useBuildingStore } from '@renderer/stores/building_store';
+import { useNoticeStore } from '@renderer/stores/notice_store';
+import { useNotificationStore } from '@renderer/stores/noticefication_store';
+import { useArrearageStore } from '@renderer/stores/arrearage_store';
+const router = useRouter();
+const notificationStore = useNotificationStore();
+const BuildingStore = useBuildingStore();
+const AdsStore = useAdsStore();
+const NoticeStore = useNoticeStore();
+const ArrearageStore = useArrearageStore();
+
 // Login form data
-const loginData = ref({
-  user_name: 'admin',
+const loginData = ref<LoginRequest>({
+  ismartId: '0386101',
   password: 'admin123'
-})
+});
 
-// Fetch buildings on mount
-watch(selectedBuilding, () => {
-  // console.log(selectedBuilding.value)
-})
-
-// Handle login
 const handleLogin = async () => {
-  await loginBuilding(loginData.value)
-    .then((res) => {
-      // 数据初始化
-      adsStore().setAds([])
-      adsStore().setAds_hasDownload([])
-      adsStore().setAds_hasDownload_path([])
-      buildingStore().setBuilding('')
-      noticeStore().clearNotices()
-      useTaskStore().stopScheduledTask()
-      localStorage.removeItem('login-username')
-      localStorage.removeItem('login-password')
-
-      // 数据初始化完成
-      // console.log(res.data)
-      localStorage.setItem('login-username', loginData.value.user_name)
-      localStorage.setItem('login-password', loginData.value.password)
-      adsStore().setAds(res.data.advertisements_buildings)
-      // console.log(adsStore().getAds)
-      downloadAllAds()
-      buildingStore().setBuilding(adsStore().getAds[0].BuildingAdmin)
-      notificationStore.addNotification('綁定成功', 'success')
-      useTaskStore().setUpdateInterval(1)
-      useTaskStore().startScheduledTask()
-
-      router.push('/buildingDetail')
-    })
-    .catch((err) => {
-      console.log(err)
-      notificationStore.addNotification('綁定失敗', 'error')
-    })
-  let blg_id = buildingStore().getBuilding.blg_id
-  // console.log(blg_id)
-  if (!blg_id) {
-    blg_id = '314100'
-    localStorage.setItem('blg_id', blg_id)
-  }
   try {
-    const res = await getNotices({ blg_id: blg_id })
-    const notices = res.data
-    const commonNotices = notices.filter((notice) => notice.mess_type === 'common')
-    const advNotices = notices.filter((notice) => notice.mess_type === 'adv')
-    noticeStore().setNotices_common(commonNotices)
-    noticeStore().setNotices_adv(advNotices)
-    noticeStore().setNotices(notices)
-    // console.log(noticeStore().getNotices_common)
-    // console.log(noticeStore().getNotices_adv)
-    downloadAllPDFs()
-    // useNotificationStore().addNotification('獲取通知成功', 'success')
+    // 调用登录接口
+    const response = await api.login(loginData.value);
+    const token = response.token;
+    
+    // 保存登录信息和token
+    localStorage.setItem('ismartId', loginData.value.ismartId);
+    localStorage.setItem('password', loginData.value.password);
+    localStorage.setItem('token', token);
+    
+    // 设置大楼信息
+    BuildingStore.setBuilding(response.data);
+    console.log(BuildingStore.getBuilding)
+    
+    // 获取广告列表
+    const adsResponse = await api.getAdvertisements(token);
+    console.log(adsResponse.data)
+    AdsStore.setAds(adsResponse.data);
+    
+    // 获取通知列表
+    const noticesResponse = await api.getNotices(token);
+    console.log(noticesResponse.data)
+    NoticeStore.setNotices(noticesResponse.data);
+
+    // // 获取欠费信息
+    // const arrearageResponse = await api.getArrearage(token);
+    // console.log(arrearageResponse.data)
+    // ArrearageStore.setArrearage(arrearageResponse.data);
+    
+    // 显示成功提示
+    notificationStore.addNotification('绑定成功', 'success');
+    
+    // 跳转到详情页
+    router.push('/buildingDetail');
   } catch (error) {
-    console.error('獲取通知失敗:', error)
-    // useNotificationStore().addNotification('獲取通知失敗', 'error')
+    console.error('API error:', error);
+    notificationStore.addNotification('绑定失败，请检查账号密码', 'error');
   }
 }
 </script>
-
-<style lang="scss" scoped>
-.auth-bind-label {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #000;
-  font-family: 'Adelle Sans Devanagari';
-  font-size: 48px;
-  font-style: normal;
-  font-weight: 700;
-  line-height: 64px; /* 133.333% */
-  letter-spacing: 4.8px;
-}
-.form-label {
-  width: 72px;
-  height: 57px;
-  color: #000;
-  font-family: 'Adelle Sans Devanagari';
-  font-size: 24px;
-  font-style: normal;
-  font-weight: 700;
-  line-height: 28px; /* 116.667% */
-  display: flex;
-  align-items: center;
-
-  white-space: nowrap;
-  position: absolute;
-  top: 0px;
-  left: 178px;
-}
-.form-input {
-  width: 467px;
-  height: 57px;
-  border: 1px solid #000;
-  font-family: 'Adelle Sans Devanagari';
-  font-size: 24px;
-  font-style: normal;
-  font-weight: 700;
-}
-.settings-container {
-  padding: 15px 32px 90px 32px;
-  width: 100%;
-  height: 100%;
-  color: #000;
-}
-.form-button {
-  color: #000;
-  font-family: 'Adelle Sans Devanagari';
-  font-size: 24px;
-  font-style: normal;
-  font-weight: 700;
-  line-height: 28px; /* 116.667% */
-  letter-spacing: 24px;
-
-  width: 468px;
-  height: 60px;
-  border-radius: 3px;
-  border: 1px solid #000;
-  background: #fff;
-  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.form-groups {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 28px;
-}
-.form-group {
-  display: flex;
-  width: 100%;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-button {
-  padding: 10px 15px;
-}
-</style>
