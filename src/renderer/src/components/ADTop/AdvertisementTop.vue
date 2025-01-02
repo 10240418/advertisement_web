@@ -127,10 +127,24 @@ const startAdCycle = async () => {
   clearAdTimer()
   clearCountdownTimer()
 
-  if (!ads.value.length) return
+  if (!ads.value?.length) {
+    console.warn('没有可用的广告')
+    currentAd.value = null
+    return
+  }
 
   try {
+    if (currentAdIndex.value >= ads.value.length) {
+      currentAdIndex.value = 0
+    }
+
     const ad = ads.value[currentAdIndex.value]
+    if (!ad) {
+      console.warn('当前索引的广告不存在')
+      nextAd()
+      return
+    }
+
     const downloadedAd = adsHasDownloadMap.value?.get(ad.id)
     currentAd.value = downloadedAd || ad
 
@@ -203,7 +217,12 @@ const handleVideoEnd = () => {
 
 // next ad
 const nextAd = () => {
-  // console.log('nextAd', ads.value.length, ads_hasDownload.value.length)
+  if (!ads.value?.length) {
+    currentAdIndex.value = 0
+    currentAd.value = null
+    return
+  }
+  
   currentAdIndex.value = (currentAdIndex.value + 1) % ads.value.length
   startAdCycle()
 }
