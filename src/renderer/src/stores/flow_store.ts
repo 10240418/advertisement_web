@@ -42,7 +42,7 @@ export const useFlowStore = defineStore('flow', () => {
 
   // === 计时器配置（毫秒） ===
   const timeoutConfig: TimerConfig = {
-    idle: 10000,        // 10秒空闲
+    idle: 5000,        // 5秒空闲
     display: 30000,     // 30秒显示
     notice: 10000,      // 10秒通知
     fullscreen: 10000,  // 10秒全屏

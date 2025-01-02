@@ -34,13 +34,13 @@
                flex flex-col items-center justify-center
                mb-4"
         tabindex="0"
-        aria-label="失物招領"
+        aria-label="物業繳費"
       >
         <div class="flex flex-col items-center">
-          <span class="text-3xl font-bold text-primary tracking-wider mb-3">失物招領</span>
-          <span class="text-sm font-medium text-[#8E8E93] tracking-widest uppercase">Lost & Found</span>
+          <span class="text-3xl font-bold text-primary tracking-wider mb-3">物業繳費</span>
+          <span class="text-sm font-medium text-[#8E8E93] tracking-widest uppercase">Payment</span>
         </div>
-        <p class="text-sm text-neutral/70 mt-6 text-center">查看小區失物招領信息</p>
+        <p class="text-sm text-neutral/70 mt-6 text-center">點擊這裏進行物業繳費</p>
       </button>
 
       <!-- 社区活动卡片 -->
@@ -138,12 +138,7 @@ const noticeStore = useNoticeStore()
 
 // 修改获取通知数据的方法
 const loadNotices = () => {
-  const allNotices = [
-    ...noticeStore.urgentNotices,
-    ...noticeStore.commonNotices,
-    ...noticeStore.governmentNotices,
-    ...noticeStore.systemNotices
-  ]
+  const allNotices = noticeStore.notices
   
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '無時間'
@@ -208,7 +203,7 @@ const handleMenuClick = (route: string) => {
 
 // 添加点击公告标题的处理函数
 const handleNoticeHeaderClick = () => {
-  router.push('/generalNotice')
+  router.push('/allNotice')
 }
 
 // 修改通知点击处理函数

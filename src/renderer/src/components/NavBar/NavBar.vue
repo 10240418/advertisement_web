@@ -3,6 +3,7 @@
     <div class="flex justify-between items-center h-full">
       <!-- 左侧返回/设置按钮 -->
       <button 
+        v-if="showButton"
         @click="handleNavigation"
         class="h-[52px] px-6 flex justify-center items-center gap-2 rounded-lg
                bg-[#007AFF] text-white text-xl tracking-wider
@@ -20,6 +21,14 @@
         />
         <span class="font-medium">{{ buttonText }}</span>
       </button>
+
+      <!-- 隐藏的点击区域 -->
+      <div 
+        v-if="!showButton && isHomePage"
+        @click="handleSecretClick"
+        class="h-[52px] w-[52px] cursor-default"
+        aria-hidden="true"
+      ></div>
 
       <!-- 中间的欠费表按钮 -->
       <!-- <button 
@@ -43,10 +52,33 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const clickCount = ref(0)
+const showButton = computed(() => {
+  const path = router.currentRoute.value.path
+  return path !== '/'
+})
+
+const isHomePage = computed(() => {
+  return router.currentRoute.value.path === '/'
+})
+
+// 处理秘密点击
+const handleSecretClick = () => {
+  clickCount.value++
+  if (clickCount.value >= 5) {
+    clickCount.value = 0
+    const token = localStorage.getItem('token')
+    if (token) {
+      router.push('/buildingDetail')
+    } else {
+      router.push('/setting')
+    }
+  }
+}
 
 // 根据当前路由计算按钮文本
 const buttonText = computed(() => {
@@ -66,13 +98,19 @@ const getButtonIcon = computed(() => {
 // 处理导航逻辑
 const handleNavigation = () => {
   const path = router.currentRoute.value.path
+  const token = localStorage.getItem('token')
   
   if (path === '/') {
-    router.push('/setting')
+    // 从首页点击设置按钮时，根据token决定跳转目标
+    if (token) {
+      router.push('/buildingDetail')
+    } else {
+      router.push('/setting')
+    }
   } else if (path === '/setting') {
     router.push('/')
   } else if (path === '/buildingDetail') {
-    router.push('/setting')
+    router.push('/')
   } else if (path === '/arrearage-table') {
     router.push('/')
   } else {
@@ -80,8 +118,4 @@ const handleNavigation = () => {
   }
 }
 
-// 处理欠费表导航
-const handleArrearageTable = () => {
-  router.push('/arrearage-table')
-}
 </script>

@@ -7,69 +7,62 @@ export const useTaskStore = defineStore('task', {
     isRunning: false as boolean,
     retryCount: 0 as number,
     maxRetries: 3 as number,
-    // 添加三种不同数据的更新间隔(分钟)
-    arrearageInterval: 5 as number,  // 欠费数据更新间隔
-    pdfInterval: 10 as number,       // PDF数据更新间隔
-    adsInterval: 15 as number,       // 广告数据更新间隔
+    // 统一使用一个对象来存储间隔时间
+    intervals: {
+      arrearage: 5,  // 欠费数据更新间隔(分钟)
+      pdf: 10,       // PDF数据更新间隔(分钟)
+      ads: 15        // 广告数据更新间隔(分钟)
+    },
     // 存储各个定时器ID
     scheduledTaskIds: {
       arrearage: null as number | null,
       pdf: null as number | null,
       ads: null as number | null
-    },
-    updateIntervals: {
-      arrearage: 5,  // 欠费数据更新间隔(分钟)
-      pdf: 10,       // PDF数据更新间隔(分钟)
-      ads: 15        // 广告数据更新间隔(分钟)
     }
   }),
 
   getters: {
     canRetry(state): boolean {
       return state.retryCount < state.maxRetries;
+    },
+    // 添加获取间隔时间的 getter
+    getInterval: (state) => (type: keyof typeof state.intervals) => {
+      return state.intervals[type];
     }
   },
 
   actions: {
     // 设置各类数据的更新间隔
-    setInterval(type: 'arrearage' | 'pdf' | 'ads', minutes: number) {
-      const intervalMap = {
-        arrearage: 'arrearageInterval',
-        pdf: 'pdfInterval',
-        ads: 'adsInterval'
-      };
-      this[intervalMap[type]] = Math.max(1, minutes);
+    setInterval(type: keyof typeof this.intervals, minutes: number) {
+      this.intervals[type] = Math.max(1, minutes);
+      // 重启对应的定时任务
+      this.stopTask(type);
+      this.startTask(type);
     },
 
     // 开始所有定时任务
     startAllTasks() {
-      this.startTask('arrearage');
-      this.startTask('pdf');
-      this.startTask('ads');
+      Object.keys(this.intervals).forEach(type => {
+        this.startTask(type as keyof typeof this.intervals);
+      });
     },
 
     // 开始单个定时任务
-    startTask(type: 'arrearage' | 'pdf' | 'ads') {
+    startTask(type: keyof typeof this.intervals) {
       // 先清除现有的定时器
       this.stopTask(type);
       
-      const intervalMap = {
-        arrearage: this.arrearageInterval,
-        pdf: this.pdfInterval,
-        ads: this.adsInterval
-      };
-
       // 设置新的定时器
       this.scheduledTaskIds[type] = window.setInterval(() => {
         this.executeTask(type);
-      }, intervalMap[type] * 60 * 1000);
+      }, this.intervals[type] * 60 * 1000);
 
       // 立即执行一次
       this.executeTask(type);
     },
 
     // 停止单个定时任务
-    stopTask(type: 'arrearage' | 'pdf' | 'ads') {
+    stopTask(type: keyof typeof this.intervals) {
       if (this.scheduledTaskIds[type] !== null) {
         clearInterval(this.scheduledTaskIds[type]!);
         this.scheduledTaskIds[type] = null;
@@ -79,11 +72,12 @@ export const useTaskStore = defineStore('task', {
     // 停止所有定时任务
     stopAllTasks() {
       Object.keys(this.scheduledTaskIds).forEach(type => {
-        this.stopTask(type as keyof typeof this.scheduledTaskIds);
+        this.stopTask(type as keyof typeof this.intervals);
       });
     },
 
-    async executeTask(type: 'arrearage' | 'pdf' | 'ads') {
+    async executeTask(type: keyof typeof this.intervals) {
+      console.log('executeTask', type, this.isRunning)
       if (this.isRunning) return;
 
       try {
@@ -117,13 +111,8 @@ export const useTaskStore = defineStore('task', {
       if (isLoggedIn) {
         this.startAllTasks();
       }
-    },
-
-    setUpdateInterval(type: 'arrearage' | 'pdf' | 'ads', minutes: number) {
-      this.updateIntervals[type] = Math.max(1, minutes);
-      // 重启对应的定时任务
-      this.stopTask(type);
-      this.startTask(type);
     }
-  }
+  },
+
+  persist: true // 添加持久化
 });

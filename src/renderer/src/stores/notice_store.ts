@@ -46,6 +46,16 @@ export const useNoticeStore = defineStore('notice', {
     // 设置所有通知
     setNotices(notices: Notice[]) {
       this.notices = notices;
+      // 清理不在新数据中的已下载通知
+      this.cleanupDownloadedNotices();
+    },
+
+    // 添加新的清理方法
+    cleanupDownloadedNotices() {
+      const newNoticeIds = new Set(this.notices.map(notice => notice.id));
+      this.downloadedNotices = this.downloadedNotices.filter(
+        downloadedNotice => newNoticeIds.has(downloadedNotice.notice.id)
+      );
     },
 
     // 添加已下载的通知

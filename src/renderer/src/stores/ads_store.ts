@@ -41,6 +41,16 @@ export const useAdsStore = defineStore('ads', {
     // 设置广告列表
     setAds(ads: Advertisement[]) {
       this.advertisements = ads;
+      // 清理不在新数据中的已下载广告
+      this.cleanupDownloadedAds();
+    },
+
+    // 添加新的清理方法
+    cleanupDownloadedAds() {
+      const newAdIds = new Set(this.advertisements.map(ad => ad.id));
+      this.downloadedAds = this.downloadedAds.filter(
+        downloadedAd => newAdIds.has(downloadedAd.advertisement.id)
+      );
     },
 
     // 添加已下载的广告

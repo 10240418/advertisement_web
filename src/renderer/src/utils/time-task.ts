@@ -21,6 +21,7 @@ import { useArrearageStore } from '@renderer/stores/arrearage_store';
  * @returns {Promise<{success: boolean, path?: string, error?: any}>} 
  */
 export const downloadImage = async (ad, PathName) => {
+  console.log(`开始下载图片: ${ad.title}, URL: ${ad.file?.path}`);
   const adsStore = useAdsStore();
   
   try {
@@ -55,14 +56,13 @@ export const downloadImage = async (ad, PathName) => {
 export const downloadAllAds = async () => {
   const adsStore = useAdsStore();
   
-  // 深拷贝所有广告数据
-  const allAds = JSON.parse(JSON.stringify(adsStore.getAllAds));
-  // 获取已下载广告的ID列表
+  // 只处理当前存在于 advertisements 中的广告
+  const currentAds = adsStore.getAllAds;
   const downloadedAds = adsStore.getDownloadedAds.map(item => item.advertisement.id);
 
   // 过滤出未下载的广告
-  const adsToDownload = allAds.filter(ad => !downloadedAds.includes(ad.id));
-  console.log('adsToDownload',adsStore.getDownloadedAds ,adsToDownload)
+  const adsToDownload = currentAds.filter(ad => !downloadedAds.includes(ad.id));
+  console.log('adsToDownload', adsStore.getDownloadedAds, adsToDownload);
 
   // 创建下载任务数组
   const downloadTasks = adsToDownload.map(async (ad) => {
@@ -127,6 +127,7 @@ export const downloadAllAds = async () => {
  * @returns {Promise<{success: boolean, path?: string, error?: any}>}
  */
 export const downloadVideo = async (ad, PathName) => {
+  console.log(`开始下载视频: ${ad.title}, URL: ${ad.file?.path}`);
   const adsStore = useAdsStore();
   
   try {
@@ -160,6 +161,7 @@ export const downloadVideo = async (ad, PathName) => {
  * @param PathName - 存储路径名称 ('common' 或 'adv')
  */
 export const downloadAndStorePDF = async (notice, PathName) => {
+  console.log(`开始下载PDF: ${notice.title}, URL: ${notice.file.path}`);
   const noticeStore = useNoticeStore();
   const notificationStore = useNotificationStore();
   
@@ -207,61 +209,47 @@ export const downloadAllPDFs = async () => {
   const noticeStore = useNoticeStore();
   const notificationStore = useNotificationStore();
   
-  console.log('[批量下载] 开始批量下载PDF通知')
-  
-  // 取所有通知
-  const allNotices = [
-    ...noticeStore.commonNotices,
-    ...noticeStore.governmentNotices,
-    ...noticeStore.systemNotices,
-    ...noticeStore.urgentNotices
-  ];
+  console.log('[批量下载] 开始批量下载PDF通知');
+  console.log('[批量下载] 通知列表:', noticeStore.notices);
+  // 获取所有类型的通知
+  const currentNotices = noticeStore.notices.filter(notice => notice.fileId && notice.file?.path); // 只处理有文件的通知
 
-  console.log(`[批量下载] 总通知数量: ${allNotices.length}`)
+  if (currentNotices.length === 0) {
+    console.log('[批量下载] 没有需要下载的PDF文件');
+    return;
+  }
+
+  console.log(`[批量下载] 找到 ${currentNotices.length} 个需要下载的通知`);
+  
   let downloadCount = 0;
   let errorCount = 0;
   let skipCount = 0;
 
-  // 下载所有通知的PDF
-  for (const notice of allNotices) {
+  for (const notice of currentNotices) {
     try {
       // 检查是否已下载
       if (noticeStore.isNoticeDownloaded(notice.id)) {
-        console.log(`[批量下载] 跳过已下载通知: ${notice.title}`)
+        console.log(`[批量下载] 跳过已下载通知: ${notice.title}`);
         skipCount++;
         continue;
       }
+
+      console.log(`[批量下载] 正在下载通知: ${notice.title}`);
+      await downloadAndStorePDF(notice, notice.type);
+      downloadCount++;
       
-      // 确保notice有file对象且有path
-      if (notice.fileId && notice.file && notice.file.path) {
-        console.log(`[批量下载] 开始下载通知: ${notice.title}`)
-        await downloadAndStorePDF(notice, notice.type);
-        downloadCount++;
-      } else {
-        console.log(`[批量下载] 通知缺少文件信息: ${notice.title}`)
-        skipCount++;
-      }
-    } catch (error: any) {
+      // 添加小延迟避免同时下载太多文件
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (error) {
       errorCount++;
-      console.error(`[批量下载] 下載通知 ${notice.title} 的PDF失敗:`, error);
-      continue;
+      console.error(`[批量下载] 下载失败 - ${notice.title}:`, error);
     }
   }
 
-  console.log(`[批量下载] 下载完成统计:`)
-  console.log(`- 成功下载: ${downloadCount}`)
-  console.log(`- 跳过数量: ${skipCount}`)
-  console.log(`- 失败数量: ${errorCount}`)
-
-  // 如果有错误，显示汇总通知
-  if (errorCount > 0) {
-    notificationStore.addNotification(
-      `共有 ${errorCount} 個PDF文件下載失敗，請檢查網絡連接或訪問權限`,
-      'warning',
-      5000
-    );
-  }
-}
+  // 下载完成后显示统计信息
+  const message = `PDF更新完成: 成功${downloadCount}個, 跳過${skipCount}個${errorCount > 0 ? `, 失敗${errorCount}個` : ''}`;
+  notificationStore.addNotification(message, errorCount > 0 ? 'warning' : 'success');
+};
 
 /**
  * 处理欠费数据更新
@@ -284,15 +272,32 @@ const handleArrearageUpdate = async () => {
  */
 const handlePDFUpdate = async () => {
   const noticeStore = useNoticeStore();
+  const notificationStore = useNotificationStore();
   
-  // 1. 更新通知数据
-  const noticesResponse = await api.getNotices();
-  noticeStore.setNotices(noticesResponse.data);
+  try {
+    console.log('[PDF更新] 开始获取最新通知数据');
+    
+    // 1. 更新通知数据
+    const noticesResponse = await api.getNotices();
+    if (!noticesResponse.data || noticesResponse.data.length === 0) {
+      console.log('[PDF更新] 没有获取到新的通知数据');
+      return noticesResponse;
+    }
+    
+    console.log(`[PDF更新] 成功获取 ${noticesResponse.data.length} 条通知`);
+    noticeStore.setNotices(noticesResponse.data);
 
-  // 2. 下载新的通知文件
-  await downloadAllPDFs();
-  
-  return noticesResponse;
+    // 2. 立即执行PDF下载
+    console.log('[PDF更新] 开始下载PDF文件');
+    await downloadAllPDFs();
+    
+    console.log('[PDF更新] PDF更新和下载流程完成');
+    return noticesResponse;
+  } catch (error) {
+    console.error('[PDF更新] 更新过程发生错误:', error);
+    notificationStore.addNotification('PDF更新過程發生錯誤，請檢查網絡連接', 'error');
+    throw error;
+  }
 };
 
 /**
@@ -301,7 +306,7 @@ const handlePDFUpdate = async () => {
 const handleAdsUpdate = async () => {
   const adsStore = useAdsStore();
   
-  // 1. 更新广告数据
+  // 1. 更新广告数据（setAds 方法现在会自动清理旧的已下载数据）
   const adsResponse = await api.getAdvertisements();
   adsStore.setAds(adsResponse.data);
   
@@ -311,11 +316,47 @@ const handleAdsUpdate = async () => {
   return adsResponse;
 };
 
+// 添加新的监控函数
+const monitorDownloads = () => {
+  const adsStore = useAdsStore();
+  const noticeStore = useNoticeStore();
+  
+  setInterval(() => {
+    console.log('=== 下載資源監控 ===');
+    console.log('已下載廣告:', {
+      總數: adsStore.getDownloadedAds.length,
+      詳細: adsStore.getDownloadedAds.map(ad => ({
+        id: ad.advertisement.id,
+        標題: ad.advertisement.title,
+        類型: ad.advertisement.type,
+        路徑: ad.downloadPath
+      }))
+    });
+    
+    console.log('已下載通知:', {
+      總數: noticeStore.downloadedNotices.length,
+      詳細: noticeStore.downloadedNotices.map(notice => ({
+        id: notice.notice.id,
+        標題: notice.notice.title,
+        類型: notice.notice.type,
+        路徑: notice.downloadPath
+      }))
+    });
+    console.log('==================\n');
+  }, 1000);
+};
+
 /**
  * 定时任务主函数
  * @param type - 任务类型：'arrearage' | 'pdf' | 'ads'
  */
 export const timeTask = async (type: 'arrearage' | 'pdf' | 'ads') => {
+  // 启动监控（只在第一次调用时启动）
+  if (!window.__monitorStarted) {
+    monitorDownloads();
+    window.__monitorStarted = true;
+  }
+
   const notificationStore = useNotificationStore();
 
   // 验证登录状态
@@ -352,3 +393,10 @@ export const timeTask = async (type: 'arrearage' | 'pdf' | 'ads') => {
     throw error;
   }
 };
+
+// 添加类型声明以避免 TypeScript 错误
+declare global {
+  interface Window {
+    __monitorStarted?: boolean;
+  }
+}

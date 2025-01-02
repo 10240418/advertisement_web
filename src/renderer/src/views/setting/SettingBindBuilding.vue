@@ -65,6 +65,8 @@ import { useBuildingStore } from '@renderer/stores/building_store';
 import { useNoticeStore } from '@renderer/stores/notice_store';
 import { useNotificationStore } from '@renderer/stores/noticefication_store';
 import { useArrearageStore } from '@renderer/stores/arrearage_store';
+import { useTaskStore } from '@renderer/stores/task_store';
+
 const router = useRouter();
 const notificationStore = useNotificationStore();
 const BuildingStore = useBuildingStore();
@@ -80,6 +82,9 @@ const loginData = ref<LoginRequest>({
 
 const handleLogin = async () => {
   try {
+    // 获取 taskStore 实例
+    const taskStore = useTaskStore();
+    
     // 调用登录接口
     const response = await api.login(loginData.value);
     const token = response.token;
@@ -91,22 +96,24 @@ const handleLogin = async () => {
     
     // 设置大楼信息
     BuildingStore.setBuilding(response.data);
-    console.log(BuildingStore.getBuilding)
     
     // 获取广告列表
     const adsResponse = await api.getAdvertisements(token);
-    console.log(adsResponse.data)
     AdsStore.setAds(adsResponse.data);
     
     // 获取通知列表
     const noticesResponse = await api.getNotices(token);
-    console.log(noticesResponse.data)
     NoticeStore.setNotices(noticesResponse.data);
+    
+    // 立即执行一次所有任务的下载
 
-    // // 获取欠费信息
-    // const arrearageResponse = await api.getArrearage(token);
-    // console.log(arrearageResponse.data)
-    // ArrearageStore.setArrearage(arrearageResponse.data);
+    await taskStore.executeTask('ads');
+    await taskStore.executeTask('pdf');
+    await taskStore.executeTask('arrearage');
+
+    
+    // 启动定时任务
+    taskStore.startAllTasks();
     
     // 显示成功提示
     notificationStore.addNotification('绑定成功', 'success');

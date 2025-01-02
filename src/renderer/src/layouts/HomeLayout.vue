@@ -15,9 +15,9 @@
       <RouterView />
     </div>
 
-    <!-- 底部天气区域 -->
+    <!-- 底部区域 -->
     <div class="w-full h-[15vh] shadow-inner">
-      <WeatherFooter class="w-full h-full" />
+      <CombinedFooter class="w-full h-full" />
     </div>
   </div>
 </template>
@@ -26,7 +26,7 @@
 import { onBeforeMount } from 'vue';
 
 import AdvertisementTop from '@renderer/components/ADTop/AdvertisementTop.vue';
-import WeatherFooter from '@renderer/components/footer/WeatherFooter.vue';
+import CombinedFooter from '@renderer/components/footer/CombinedFooter.vue';
 import NavBar from '@renderer/components/NavBar/NavBar.vue';
 import { useTaskStore } from '@renderer/stores/task_store';
 
