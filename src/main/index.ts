@@ -38,13 +38,16 @@ function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1024,
     height: 2048,
-    show: false, // 初始时隐藏窗口
-    autoHideMenuBar: true, // 自动隐藏菜单栏
-    ...(process.platform === 'linux' ? { icon } : {}), // 在 Linux 平台设置图标
+
+    show: false,
+    // frame: false,   // 移除窗口边框和标题栏
+    resizable: true, // 允许调整窗口大小
+    autoHideMenuBar: true,
+    ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'), // 预加载脚本
-      sandbox: false, // 禁用沙箱
-      webSecurity: false // 禁用 Web 全性（不推荐在生产环境中使用）
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false,
+      webSecurity: false
     }
   })
 
@@ -250,7 +253,7 @@ ipcMain.handle('download-image', async (_event, { PathName, url, filename }) => 
       console.warn(`[download-image] 文件已存在: ${filePath}`)
       return { success: true, path: filePath }
     } catch {
-      // 文件不存在，使用流式下载保存��件
+      // 文件不存在，使用流式下载保存文件
       await pipeline(response.data, fs.createWriteStream(filePath))
       console.log(`图片 ${validatedFilename} 下载成功，路径: ${filePath}`)
       return { success: true, path: filePath }

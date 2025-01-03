@@ -31,7 +31,7 @@
       ></div>
 
       <!-- 中间的欠费表按钮 -->
-      <!-- <button 
+      <button 
         @click="handleArrearageTable"
         class="h-[52px] px-6 flex justify-center items-center gap-2 rounded-lg
                bg-[#28CD41] text-white text-xl tracking-wider
@@ -43,7 +43,7 @@
         tabindex="0"
       >
         <span class="font-medium">欠費表</span>
-      </button> -->
+      </button>
 
       <!-- 右侧可选的其他导航元素 -->
       <slot name="right"></slot>
@@ -61,6 +61,10 @@ const showButton = computed(() => {
   const path = router.currentRoute.value.path
   return path !== '/'
 })
+// handleArrearageTable
+const handleArrearageTable = () => {
+  router.push('/arrearage-table')
+}
 
 const isHomePage = computed(() => {
   return router.currentRoute.value.path === '/'

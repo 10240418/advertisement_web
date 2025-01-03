@@ -1,6 +1,6 @@
 <template>
   <div 
-    class="w-screen h-[438px] bg-gray-100 flex justify-center items-center relative overflow-hidden transition-all duration-300"
+    class="w-screen aspect-video bg-gray-100 flex justify-center items-center relative overflow-hidden transition-all duration-300"
     :class="{ 'fixed top-0 left-0 w-screen h-screen z-[9999] bg-black/75 backdrop-blur-md': isFullscreen }"
   >
     <div v-if="currentAd">
@@ -20,7 +20,7 @@
         ref="videoElement"
         :width="isFullscreen ? '100%' : mediaWidth"
         :src="currentAd.path ? currentAd.path : currentAd.file.path"
-        class="block rounded-lg h-[438px] object-contain"
+        class="block rounded-lg aspect-video object-contain"
         :class="{ 'w-screen h-screen object-contain drop-shadow-lg': isFullscreen }"
         muted
         autoplay

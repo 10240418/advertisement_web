@@ -78,7 +78,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, onActivated, onDeactivated } from 'vue';
-import { useRouter } from 'vue-router';
+
 import { useArrearageStore } from '@renderer/stores/arrearage_store';
 import { useFlowStore } from '@renderer/stores/flow_store';
 
@@ -102,7 +102,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  itemsPerPage: 10,
+  itemsPerPage: 13,
   autoScroll: false
 });
 
@@ -132,7 +132,7 @@ const getStatusText = (value: string | number | undefined) => {
 
 // 修改自动翻页相关逻辑
 const pageInterval = ref<NodeJS.Timeout | null>(null);
-const PAGE_CHANGE_INTERVAL = 5000; // 5秒切换一次页面
+const PAGE_CHANGE_INTERVAL = computed(() => flowStore.timeoutConfig.pdfPage);
 const isFirstMount = ref(true);
 
 // 初始化页码
@@ -153,13 +153,13 @@ const startAutoPageChange = () => {
     if (currentPage.value < totalPages.value) {
       handleNextPage();
     } else {
-      // 当到达最后一页时，保存当前页码并停止自动翻页
-      flowStore.setLastArrearageTablePage(1); // 重置为第一页，为下次循环做准备
-      stopAutoPageChange();
-      
-   
+      // 当到达最后一页时，添加与 display 时间相同的延迟后再重置
+      setTimeout(() => {
+        currentPage.value = 1;
+        flowStore.setLastArrearageTablePage(1);
+      }, flowStore.timeoutConfig.display / 3); // 使用展示时间的1/3作为过渡延迟
     }
-  }, PAGE_CHANGE_INTERVAL);
+  }, PAGE_CHANGE_INTERVAL.value);
 };
 
 const stopAutoPageChange = () => {
@@ -181,6 +181,21 @@ const handleNextPage = () => {
   if (currentPage.value < totalPages.value) {
     currentPage.value++;
     flowStore.setLastArrearageTablePage(currentPage.value);
+  } else {
+    // 添加过渡动画类
+    const tableContainer = document.querySelector('.overflow-x-auto');
+    if (tableContainer) {
+      tableContainer.classList.add('table-transition');
+      setTimeout(() => {
+        currentPage.value = 1;
+        flowStore.setLastArrearageTablePage(1);
+        // 移除过渡动画类
+        tableContainer.classList.remove('table-transition');
+      }, 300); // 300ms 过渡动画
+    } else {
+      currentPage.value = 1;
+      flowStore.setLastArrearageTablePage(1);
+    }
   }
 };
 
@@ -241,5 +256,16 @@ watch(() => records.value, (newRecords) => {
 <style scoped>
 .overflow-x-auto {
   scroll-behavior: smooth;
+}
+
+.table-transition {
+  opacity: 0.5;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* 添加淡入效果 */
+.overflow-x-auto:not(.table-transition) {
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
 }
 </style>

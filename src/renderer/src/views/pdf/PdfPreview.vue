@@ -1,6 +1,6 @@
 <!-- src/renderer/src/views/PdfPreview.vue -->
 <template>
-  <div class="flex w-full h-[calc(60vh-100px)] overflow-y-auto">
+  <div class="flex w-full h-full overflow-y-auto">
     <PDFThumbnails 
       :pdf-url="pdfSource" 
       @page-selected="handlePageSelected"
@@ -38,6 +38,7 @@ const pdfSource = ref('')
 const currentPage = ref(1)
 const totalPages = ref(1)
 let autoPlayTimer: NodeJS.Timeout | null = null
+const userInteracting = ref(false)
 
 // 清理定时器
 const clearAutoPlayTimer = () => {
@@ -49,17 +50,18 @@ const clearAutoPlayTimer = () => {
 
 // 自动播放下一页
 const playNextPage = () => {
+  if (userInteracting.value) {
+    return
+  }
+
   clearAutoPlayTimer()
   
   if (currentPage.value < totalPages.value) {
-    // 还有下一页，继续显示当前PDF的下一页
     currentPage.value++
     handlePageChange(currentPage.value)
     
-    // 设置下一页的定时器
     autoPlayTimer = setTimeout(playNextPage, flowStore.timeoutConfig.pdfPage)
   } else {
-    // 当前PDF已播放完毕，通知父组件
     flowStore.currentNoticePage = 1
     emit('page-change', currentPage.value)
   }
@@ -67,8 +69,26 @@ const playNextPage = () => {
 
 // 开始自动播放
 const startAutoPlay = () => {
+  if (userInteracting.value) {
+    return
+  }
   clearAutoPlayTimer()
   autoPlayTimer = setTimeout(playNextPage, flowStore.timeoutConfig.pdfPage)
+}
+
+// 处理用户交互开始
+const handleUserInteractionStart = () => {
+  userInteracting.value = true
+  clearAutoPlayTimer()
+  flowStore.handleUserActivity()
+}
+
+// 处理用户交互结束
+const handleUserInteractionEnd = () => {
+  userInteracting.value = false
+  if (isNoticeMode.value) {
+    startAutoPlay()
+  }
 }
 
 onBeforeMount(() => {
@@ -78,6 +98,14 @@ onBeforeMount(() => {
 })
 
 onMounted(() => {
+  const container = document.querySelector('.pdf-container')
+  if (container) {
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart']
+    events.forEach(event => {
+      container.addEventListener(event, handleUserInteractionStart)
+    })
+  }
+
   if (isNoticeMode.value) {
     startAutoPlay()
   }
@@ -85,6 +113,13 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   clearAutoPlayTimer()
+  const container = document.querySelector('.pdf-container')
+  if (container) {
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart']
+    events.forEach(event => {
+      container.removeEventListener(event, handleUserInteractionStart)
+    })
+  }
 })
 
 const emit = defineEmits<{
@@ -93,21 +128,23 @@ const emit = defineEmits<{
 
 // 统一处理页码变化
 const handlePageChange = (page: number) => {
-  currentPage.value = page
-  flowStore.currentNoticePage = page
-  emit('page-change', page)
+  if (!userInteracting.value) {
+    currentPage.value = page
+    flowStore.currentNoticePage = page
+    emit('page-change', page)
+  }
 }
 
 // 处理缩略图选择
 const handlePageSelected = (page: number) => {
-  clearAutoPlayTimer() // 用户手动选择页面时清除自动播放
+  handleUserInteractionStart()
   currentPage.value = page
   flowStore.currentNoticePage = page
   emit('page-change', page)
   
-  if (isNoticeMode.value) {
-    startAutoPlay() // 重新开始自动播放
-  }
+  setTimeout(() => {
+    handleUserInteractionEnd()
+  }, 5000)
 }
 
 // 处理总页数

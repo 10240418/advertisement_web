@@ -18,7 +18,7 @@ interface TimerConfig {
   display: number   // 显示持续时间
   notice: number    // 通知显示时间
   fullscreen: number // 全屏模式超时时间
-  pdfPage: number   // PDF 每页停留时间，新增
+  pdfPage: number   // PDF/表格每页停留时间
 }
 
 // 定义错误处理接口
@@ -47,7 +47,7 @@ export const useFlowStore = defineStore('flow', () => {
     display: 30000,     // 30秒显示
     notice: 10000,      // 10秒通知
     fullscreen: 10000,  // 10秒全屏
-    pdfPage: 5000      // 每页停留5秒，可以根据需要调整
+    pdfPage: 5000      // 每页停留5秒
   }
 
   // === 计时器存储对象 ===
