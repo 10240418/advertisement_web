@@ -91,9 +91,22 @@ export const useFlowStore = defineStore('flow', () => {
       const downloadedNotice = noticeStore.getDownloadedNotices.find(
         item => item.notice.id === notice.id
       )
-      return downloadedNotice?.downloadPath || notice.file?.path
+      return downloadedNotice?.downloadPath 
     })
   })
+
+  // 在 useFlowStore 中添加新的计算属性
+  const fullscreenAds = computed(() => 
+    adsStore.getActiveAds.filter(ad => 
+      ad.display === 'full' || ad.display === 'topfull'
+    )
+  )
+
+  const topAds = computed(() => 
+    adsStore.getActiveAds.filter(ad => 
+      ad.display === 'top' || ad.display === 'topfull'
+    )
+  )
 
   // === 错误处理函数 ===
   const handleError = ({ message, retry, fallback }: ErrorHandler) => {
@@ -163,19 +176,19 @@ export const useFlowStore = defineStore('flow', () => {
 
   // === 用户活动处理 ===
   const handleUserActivity = () => {
-    console.log('[Flow] 检测到用户活动')
+    // console.log('[Flow] 检测到用户活动')
     isUserActive.value = true
     isError.value = false
     
     if (isFullscreen.value) {
-      console.log('[Flow] 退出全屏模式')
+      // console.log('[Flow] 退出全屏模式')
       isFullscreen.value = false
     }
 
     clearTimer('fullscreen')
-    console.log('[Flow] 重置全屏计时器:', timeoutConfig.fullscreen, 'ms')
+    // console.log('[Flow] 重置全屏计时器:', timeoutConfig.fullscreen, 'ms')
     timers.fullscreen = setTimeout(() => {
-      console.log('[Flow] 触发全屏模式')
+      // console.log('[Flow] 触发全屏模式')
       isFullscreen.value = true
     }, timeoutConfig.fullscreen)
 
@@ -190,10 +203,10 @@ export const useFlowStore = defineStore('flow', () => {
 
   // === 空闲计时器管理 ===
   const startIdleTimer = () => {
-    console.log('[Flow] 启动空闲计时器:', timeoutConfig.idle, 'ms')
+    // console.log('[Flow] 启动空闲计时器:', timeoutConfig.idle, 'ms')
     clearTimer('idle')
     timers.idle = setTimeout(() => {
-      console.log('[Flow] 空闲超时，用户变为非活跃')
+      // console.log('[Flow] 空闲超时，用户变为非活跃')
       isUserActive.value = false
       startScreenSequence()
     }, timeoutConfig.idle)
@@ -204,13 +217,18 @@ export const useFlowStore = defineStore('flow', () => {
     console.log('[Flow] 开始屏幕序列')
     clearTimer('state')
     
-    // 将startNewCycle提取为独立函数
-    startNewCycle()
+    // 检查是否有全屏广告可播放
+    if (fullscreenAds.value.length > 0) {
+      startNewCycle()
+    } else {
+      // 如果没有全屏广告，直接进入欠费表
+      transitionTo('arrearage-table')
+    }
   }
 
   // 新增：将循环逻辑提取为独立函数
   const startNewCycle = () => {
-    console.log('[Flow] 开始新的轮播循环')
+    // console.log('[Flow] 开始新的轮播循环')
     
     // 重置所有状态
     rotationRetryCount.value = 0
@@ -221,16 +239,16 @@ export const useFlowStore = defineStore('flow', () => {
     clearAllTimers()
     transitionTo('fullscreen-ad')
 
-    console.log('[Flow] 设置广告->欠费表计时器:', timeoutConfig.display, 'ms')
+    // console.log('[Flow] 设置广告->欠费表计时器:', timeoutConfig.display, 'ms')
     timers.state = setTimeout(() => {
       if (!isUserActive.value) {
-        console.log('[Flow] 切换到欠费表')
+        // console.log('[Flow] 切换到欠费表')
         transitionTo('arrearage-table')
 
-        console.log('[Flow] 设置欠费表->通知计时器:', timeoutConfig.display, 'ms')
+        // console.log('[Flow] 设置欠费表->通知计时器:', timeoutConfig.display, 'ms')
         timers.state = setTimeout(() => {
           if (!isUserActive.value) {
-            console.log('[Flow] 切换到通知轮播')
+            // console.log('[Flow] 切换到通知轮播')
             transitionTo('notice')
           }
         }, timeoutConfig.display)
@@ -240,11 +258,11 @@ export const useFlowStore = defineStore('flow', () => {
 
   // === 通知轮播控制 ===
   const startNoticeRotation = () => {
-    console.log('[Flow] 尝试开始通知轮播')
-    console.log('[Flow] 活跃通知列表:', activeNotices.value)
+    // console.log('[Flow] 尝试开始通知轮播')
+    // console.log('[Flow] 活跃通知列表:', activeNotices.value)
     
     if (!activeNotices.value || activeNotices.value.length === 0) {
-      console.log('[Flow] 没有可显示的通知，返回菜单')
+      // console.log('[Flow] 没有可显示的通知，返回菜单')
       transitionTo('menu')
       return
     }
@@ -255,14 +273,14 @@ export const useFlowStore = defineStore('flow', () => {
       currentNoticeIndex.value = 0
     }
 
-    console.log('[Flow] 开始通知轮播，共', activeNotices.value.length, '条通知')
+    // console.log('[Flow] 开始通知轮播，共', activeNotices.value.length, '条通知')
     isNoticeRotating.value = true
     rotateNotice()
   }
 
   // 轮播单个通知
   const rotateNotice = async () => {
-    console.log('[Flow] 开始轮播通知, 用户状态:', isUserActive.value)
+    // console.log('[Flow] 开始轮播通知, 用户状态:', isUserActive.value)
     
     if (isUserActive.value) {
       console.log('[Flow] 用户活跃，停止轮播')
@@ -272,14 +290,14 @@ export const useFlowStore = defineStore('flow', () => {
     try {
       // 验证通知数据
       if (!activeNotices.value || activeNotices.value.length === 0) {
-        console.warn('[Flow] 没有可用的通知，尝试重新获取数据')
+        // console.warn( '[Flow] 没有可用的通知，尝试重新获取数据')
         await recoverFromError()
         return
       }
 
       // 验证当前索引
       if (currentNoticeIndex.value >= activeNotices.value.length) {
-        console.warn('[Flow] 通知索引越界，重置索引')
+        // console.warn('[Flow] 通知索引越界，重置索引')
         currentNoticeIndex.value = 0
       }
 
@@ -299,8 +317,8 @@ export const useFlowStore = defineStore('flow', () => {
         item => item.notice.id === notice.id
       )
       
-      const pdfPath = downloadedNotice?.downloadPath || notice.file?.path
-      
+      // const pdfPath = downloadedNotice?.downloadPath || notice.file?.path
+      const pdfPath = downloadedNotice?.downloadPath
       if (!pdfPath) {
         throw new Error('通知文件路径无效')
       }
@@ -449,6 +467,8 @@ export const useFlowStore = defineStore('flow', () => {
     activeAds,
     downloadedAds,
     activeNotices,
+    fullscreenAds,
+    topAds,
     
     // 方法
     handleUserActivity,

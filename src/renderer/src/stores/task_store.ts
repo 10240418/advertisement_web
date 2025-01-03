@@ -42,6 +42,7 @@ export const useTaskStore = defineStore('task', {
 
     // 开始所有定时任务
     startAllTasks() {
+      console.log('startAllTasks')
       Object.keys(this.intervals).forEach(type => {
         this.startTask(type as keyof typeof this.intervals);
       });
@@ -114,5 +115,4 @@ export const useTaskStore = defineStore('task', {
     }
   },
 
-  persist: true // 添加持久化
 });

@@ -1,7 +1,10 @@
 <template>
   <div 
     class="w-screen aspect-video bg-gray-100 flex justify-center items-center relative overflow-hidden transition-all duration-300"
-    :class="{ 'fixed top-0 left-0 w-screen h-screen z-[9999] bg-black/75 backdrop-blur-md': isFullscreen }"
+    :class="{ 
+      'fixed top-0 left-0 w-screen h-screen z-[9999] bg-black/75 backdrop-blur-md': isFullscreen,
+      'h-[30vh]': !isFullscreen // 非全屏时的高度
+    }"
   >
     <div v-if="currentAd">
       <img
@@ -52,6 +55,20 @@ import type { Advertisement } from '@renderer/apis';
 import { useAdCycle } from '@renderer/composables/useAdCycle';
 import { useVideoPlayer } from '@renderer/composables/useVideoPlayer';
 import { useScreenController } from '@renderer/composables/useScreenController'
+import { useFlowStore } from '@renderer/stores/flow_store'
+
+const screenController = useScreenController({
+  idleTimeout: 10000,
+  displayDuration: 30000,
+  noticeDuration: 10000,
+  fullscreenTimeout: 10000
+})
+
+// 计算是否应该全屏显示
+const isFullscreen = computed(() => 
+  screenController.currentState.value === 'fullscreen-ad' || 
+  screenController.isFullscreen.value
+)
 
 // isImageVisible isVideoVisible
 const isImageVisible = ref(true)
@@ -73,8 +90,10 @@ const {
 // ads store
 const adsStore = useAdsStore()
 
+const flowStore = useFlowStore()
+
 const ads = computed(() => 
-  adsStore.getActiveAds
+  isFullscreen.value ? flowStore.fullscreenAds : flowStore.topAds
 )
 
 const ads_hasDownload = computed(() =>
@@ -141,6 +160,29 @@ const startAdCycle = async () => {
     const ad = ads.value[currentAdIndex.value]
     if (!ad) {
       console.warn('当前索引的广告不存在')
+      nextAd()
+      return
+    }
+
+    // 输出当前广告信息
+    console.log('[Advertisement]', {
+      id: ad.id,
+      title: ad.title,
+      type: ad.type,
+      display: ad.display,
+      duration: ad.duration,
+      isFullscreen: isFullscreen.value,
+      currentIndex: currentAdIndex.value,
+      totalAds: ads.value.length
+    })
+
+    // 检查广告显示位置是否符合当前状态
+    const isValidDisplay = isFullscreen.value 
+      ? (ad.display === 'full' || ad.display === 'topfull')
+      : (ad.display === 'top' || ad.display === 'topfull')
+
+    if (!isValidDisplay) {
+      console.warn('广告显示位置不匹配当前状态')
       nextAd()
       return
     }
@@ -229,29 +271,35 @@ const nextAd = () => {
 
 // watch ads change
 watch(
-  ads,
-  () => {
-    // console.log('ads changed', currentAdIndex.value)
-    // currentAdIndex.value = 0
-    if (ads.value.length < currentAdIndex.value) {
+  [ads, isFullscreen],
+  ([newAds, newIsFullscreen], [oldAds, oldIsFullscreen]) => {
+    // 当切换到全屏状态时，重置广告索引并立即开始新的广告循环
+    if (newIsFullscreen !== oldIsFullscreen) {
+      currentAdIndex.value = 0
+      clearAdTimer()
+      clearCountdownTimer()
+      startAdCycle()
+      return
+    }
+
+    // 处理广告列表变化
+    if (newAds.length < currentAdIndex.value) {
       currentAdIndex.value = 0
     }
-    // unbind binding
-    else if (ads.value.length === 0) {
+    else if (newAds.length === 0) {
       if (videoElement.value) {
         videoElement.value.pause()
         clearAdTimer()
         clearCountdownTimer()
       }
     }
+    
+    // 处理剩余时间
     if (remainingTime.value > 0) {
-      //延时执行
       setTimeout(() => {
-        // console.log('广告列表变化，开始广告循环')
         startAdCycle()
       }, remainingTime.value * 1000)
     } else {
-      // console.log('广告列表变化，开始广告循环')
       startAdCycle()
     }
   },
@@ -290,19 +338,5 @@ onBeforeUnmount(() => {
   clearCountdownTimer()
   stopVideo()
 })
-
-// 使用更新后的 screenController
-const screenController = useScreenController({
-  idleTimeout: 10000,
-  displayDuration: 30000,
-  noticeDuration: 10000,
-  fullscreenTimeout: 10000
-})
-
-// 计算是否应该全屏显示
-const isFullscreen = computed(() => 
-  screenController.currentState.value === 'fullscreen-ad' || 
-  screenController.isFullscreen.value
-)
 
 </script>

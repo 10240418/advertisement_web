@@ -106,13 +106,11 @@ const handleLogin = async () => {
     NoticeStore.setNotices(noticesResponse.data);
     
     // 立即执行一次所有任务的下载
-
     await taskStore.executeTask('ads');
     await taskStore.executeTask('pdf');
     await taskStore.executeTask('arrearage');
-
     
-    // 启动定时任务
+    // 启动定时任务（HomeLayout 会处理这个）
     taskStore.startAllTasks();
     
     // 显示成功提示

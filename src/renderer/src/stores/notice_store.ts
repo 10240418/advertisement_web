@@ -89,6 +89,7 @@ export const useNoticeStore = defineStore('notice', {
     clearNotices() {
       this.notices = [];
       this.downloadedNotices = [];
+      console.log('清空通知',this.notices,this.downloadedNotices);
     }
   },
 
