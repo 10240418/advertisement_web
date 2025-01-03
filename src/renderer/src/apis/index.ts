@@ -63,7 +63,7 @@ interface Notice {
   deletedAt: null | string
   title: string
   description: string
-  type: 'urgent' | 'common' | 'government' | 'system'
+  type: 'urgent' | 'building' | 'government' | 'normal'
   isPublic: boolean
   fileId: number | null
   file: FileInfo

@@ -65,7 +65,7 @@
 
     <!-- 右侧公告区域 -->
     <div class="flex-1 min-w-0 bg-white rounded-xl border border-grey 
-                shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-4
+                shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-4 overflow-y-auto
                 hover:shadow-md hover:border-primary/20 
                 transition-all duration-200 cursor-pointer"
          @click="handleNoticeHeaderClick"

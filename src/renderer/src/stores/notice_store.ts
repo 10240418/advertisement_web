@@ -24,7 +24,7 @@ export const useNoticeStore = defineStore('notice', {
 
     // 获取普通通知  
     commonNotices: (state) => 
-      state.notices.filter(notice => notice.type === 'common'),
+      state.notices.filter(notice => notice.type === 'normal'),
 
     // 获取政府通知
     governmentNotices: (state) => 
@@ -32,7 +32,7 @@ export const useNoticeStore = defineStore('notice', {
 
     // 获取系统通知
     systemNotices: (state) => 
-      state.notices.filter(notice => notice.type === 'system'),
+      state.notices.filter(notice => notice.type === 'building'),
 
     // 获取已下载的通知
     getDownloadedNotices: (state) => state.downloadedNotices,

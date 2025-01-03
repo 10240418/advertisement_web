@@ -17,12 +17,7 @@ const noticeStore = useNoticeStore()
 
 const updateSources = () => {
   // 合并所有类型的通知
-  const allNotices = [
-    ...noticeStore.commonNotices,
-    ...noticeStore.urgentNotices,
-    ...noticeStore.governmentNotices,
-    ...noticeStore.systemNotices
-  ].map(notice => ({
+  const allNotices = noticeStore.notices.map(notice => ({
     id: notice.id,
     title: notice.title,
     type: notice.type,
@@ -46,10 +41,7 @@ const updateSources = () => {
 // 监听 store 变化
 watch(
   [
-    () => noticeStore.commonNotices,
-    () => noticeStore.urgentNotices,
-    () => noticeStore.governmentNotices,
-    () => noticeStore.systemNotices
+    () => noticeStore.notices,
   ],
   () => {
     updateSources()

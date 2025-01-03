@@ -279,9 +279,9 @@ const displayTypeMap: Record<Advertisement['display'], string> = {
 // 通知类型映射
 const noticeTypeMap: Record<Notice['type'], string> = {
   'urgent': '緊急',
-  'common': '一般',
+  'normal': '一般',
   'government': '政府',
-  'system': '系統'
+  'building': '系統'
 };
 
 // 通知类型样式

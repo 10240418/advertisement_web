@@ -12,6 +12,7 @@ import { useAdsStore } from '@renderer/stores/ads_store';
 import { useNoticeStore } from '@renderer/stores/notice_store';
 import { useNotificationStore } from '@renderer/stores/noticefication_store';
 import { useArrearageStore } from '@renderer/stores/arrearage_store';
+import { useFlowStore } from '@renderer/stores/flow_store';
 
 
 /**
@@ -273,11 +274,19 @@ const handleArrearageUpdate = async () => {
 const handlePDFUpdate = async () => {
   const noticeStore = useNoticeStore();
   const notificationStore = useNotificationStore();
+  const flowStore = useFlowStore();
   
   try {
     console.log('[PDF更新] 开始获取最新通知数据');
     
-    // 1. 更新通知数据
+    // 保存当前状态
+    const currentState = {
+      noticeIndex: flowStore.currentNoticeIndex,
+      noticePage: flowStore.currentNoticePage,
+      screenState: flowStore.currentScreenState
+    };
+    
+    // 更新通知数据
     const noticesResponse = await api.getNotices();
     if (!noticesResponse.data || noticesResponse.data.length === 0) {
       console.log('[PDF更新] 没有获取到新的通知数据');
@@ -285,9 +294,23 @@ const handlePDFUpdate = async () => {
     }
     
     console.log(`[PDF更新] 成功获取 ${noticesResponse.data.length} 条通知`);
+    
+    // 智能合并通知数据
+    const oldNotices = noticeStore.notices;
     noticeStore.setNotices(noticesResponse.data);
+    
+    // 如果正在轮播，尝试保持当前位置
+    if (flowStore.isNoticeRotating) {
+      const currentNotice = oldNotices[currentState.noticeIndex];
+      if (currentNotice) {
+        const newIndex = noticesResponse.data.findIndex(n => n.id === currentNotice.id);
+        if (newIndex !== -1) {
+          flowStore.currentNoticeIndex = newIndex;
+        }
+      }
+    }
 
-    // 2. 立即执行PDF下载
+    // 下载新通知
     console.log('[PDF更新] 开始下载PDF文件');
     await downloadAllPDFs();
     

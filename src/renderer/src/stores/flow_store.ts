@@ -3,6 +3,7 @@ import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNoticeStore } from './notice_store'
 import { useAdsStore } from './ads_store'
+import { timeTask } from '@renderer/utils/time-task'
 
 // 定义可能的屏幕状态类型
 // menu: 菜单界面
@@ -65,6 +66,16 @@ export const useFlowStore = defineStore('flow', () => {
   const totalNoticePages = ref(1)         // 总页数
   const isNoticeRotating = ref(false)     // 是否正在轮播通知
 
+  // === 新增状态 ===
+  const rotationRetryCount = ref(0)  // 轮播重试次数
+  const maxRetryAttempts = 3         // 最大重试次数
+  const isRecovering = ref(false)    // 是否正在恢复
+  const lastSuccessfulState = ref<{  // 记录最后一次成功的状态
+    noticeIndex: number
+    noticePage: number
+    screenState: ScreenState
+  } | null>(null)
+
   // === 计算属性 ===
   // 获取活跃的广告列表
   const activeAds = computed(() => adsStore.getActiveAds)
@@ -73,13 +84,8 @@ export const useFlowStore = defineStore('flow', () => {
   // 获取所有可显示的通知（已下载且有效的）
   const activeNotices = computed(() => {
     // 合并所有类型的通知
-    const allNotices = [
-      ...noticeStore.urgentNotices,       // 紧急通知
-      ...noticeStore.commonNotices,       // 普通通知
-      ...noticeStore.governmentNotices,   // 政府通知
-      ...noticeStore.systemNotices        // 系统通知
-    ]
-    
+    const allNotices = noticeStore.notices
+    console.log('allNotices',allNotices,noticeStore.getDownloadedNotices)
     // 过滤出已下载或有本地路径的通知
     return allNotices.filter(notice => {
       const downloadedNotice = noticeStore.getDownloadedNotices.find(
@@ -205,6 +211,14 @@ export const useFlowStore = defineStore('flow', () => {
   // 新增：将循环逻辑提取为独立函数
   const startNewCycle = () => {
     console.log('[Flow] 开始新的轮播循环')
+    
+    // 重置所有状态
+    rotationRetryCount.value = 0
+    currentNoticeIndex.value = 0
+    currentNoticePage.value = 1
+    lastSuccessfulState.value = null
+    
+    clearAllTimers()
     transitionTo('fullscreen-ad')
 
     console.log('[Flow] 设置广告->欠费表计时器:', timeoutConfig.display, 'ms')
@@ -250,33 +264,49 @@ export const useFlowStore = defineStore('flow', () => {
   const rotateNotice = async () => {
     console.log('[Flow] 开始轮播通知, 用户状态:', isUserActive.value)
     
-    if (!isUserActive.value && activeNotices.value && activeNotices.value.length > 0) {
+    if (isUserActive.value) {
+      console.log('[Flow] 用户活跃，停止轮播')
+      return
+    }
+
+    try {
+      // 验证通知数据
+      if (!activeNotices.value || activeNotices.value.length === 0) {
+        console.warn('[Flow] 没有可用的通知，尝试重新获取数据')
+        await recoverFromError()
+        return
+      }
+
+      // 验证当前索引
+      if (currentNoticeIndex.value >= activeNotices.value.length) {
+        console.warn('[Flow] 通知索引越界，重置索引')
+        currentNoticeIndex.value = 0
+      }
+
+      const notice = activeNotices.value[currentNoticeIndex.value]
+      if (!notice) {
+        throw new Error('无效的通知数据')
+      }
+
+      // 保存当前状态
+      lastSuccessfulState.value = {
+        noticeIndex: currentNoticeIndex.value,
+        noticePage: currentNoticePage.value,
+        screenState: currentScreenState.value
+      }
+
+      const downloadedNotice = noticeStore.getDownloadedNotices.find(
+        item => item.notice.id === notice.id
+      )
+      
+      const pdfPath = downloadedNotice?.downloadPath || notice.file?.path
+      
+      if (!pdfPath) {
+        throw new Error('通知文件路径无效')
+      }
+
+      // 路由导航
       try {
-        const notice = activeNotices.value[currentNoticeIndex.value]
-        if (!notice) {
-          console.error('[Flow] 无法获取当前通知')
-          return
-        }
-
-        const downloadedNotice = noticeStore.getDownloadedNotices.find(
-          item => item.notice.id === notice.id
-        )
-        
-        const pdfPath = downloadedNotice?.downloadPath || notice.file?.path
-        
-        if (!pdfPath) {
-          console.error('[Flow] 通知文件路径无效')
-          handleError({
-            message: '通知文件路径无效',
-            retry: () => {
-              currentNoticeIndex.value = (currentNoticeIndex.value + 1) % activeNotices.value.length
-              rotateNotice()
-            }
-          })
-          return
-        }
-
-        // 如果是新的通知，重置页码
         if (currentNoticePage.value === 1) {
           await router.push('/')
           await nextTick()
@@ -289,43 +319,97 @@ export const useFlowStore = defineStore('flow', () => {
             title: notice.title,
             noticeId: notice.id,
             currentPage: currentNoticePage.value.toString(),
-            _t: Date.now()
+            _t: Date.now()  // 添加时间戳防止缓存
           }
         })
         
         await nextTick()
+        rotationRetryCount.value = 0  // 重置重试计数
         
+        // 设置状态切换计时器
         clearTimer('state')
         timers.state = setTimeout(() => {
-          if (currentNoticePage.value < totalNoticePages.value) {
-            // 还有下一页，继续显示当前PDF的下一页
-            currentNoticePage.value++
-            rotateNotice()
-          } else {
-            // 当前PDF已经显示完所有页面，切换到下一个通知
-            currentNoticePage.value = 1
-            currentNoticeIndex.value++
-            
-            if (currentNoticeIndex.value >= activeNotices.value.length) {
-              // 所有通知都显示完毕，重新开始新的循环
-              currentNoticeIndex.value = 0
-              isNoticeRotating.value = false
-              clearAllTimers() // 清除所有现有计时器
-              startNewCycle() // 开始新的循环
-            } else {
-              // 显示下一个通知
-              rotateNotice()
-            }
+          if (!isUserActive.value) {
+            handleNoticePageChange()
           }
         }, timeoutConfig.pdfPage)
 
-      } catch (error) {
-        console.error('[Flow] 通知轮播失败:', error)
-        handleError({
-          message: `通知轮播失败: ${error}`,
-          retry: rotateNotice
-        })
+      } catch (routerError) {
+        console.error('[Flow] 路由导航失败:', routerError)
+        throw routerError
       }
+
+    } catch (error) {
+      console.error('[Flow] 通知轮播失败:', error)
+      await handleRotationError(error)
+    }
+  }
+
+  // === 新增：处理通知页面变化 ===
+  const handleNoticePageChange = () => {
+    if (currentNoticePage.value < totalNoticePages.value) {
+      currentNoticePage.value++
+      rotateNotice()
+    } else {
+      currentNoticePage.value = 1
+      currentNoticeIndex.value++
+      
+      if (currentNoticeIndex.value >= activeNotices.value.length) {
+        currentNoticeIndex.value = 0
+        isNoticeRotating.value = false
+        clearAllTimers()
+        startNewCycle()
+      } else {
+        rotateNotice()
+      }
+    }
+  }
+
+  // === 新增：错误处理函数 ===
+  const handleRotationError = async (error: any) => {
+    console.error('[Flow] 轮播错误:', error)
+    
+    if (rotationRetryCount.value < maxRetryAttempts) {
+      rotationRetryCount.value++
+      console.log(`[Flow] 尝试恢复轮播 (${rotationRetryCount.value}/${maxRetryAttempts})`)
+      await recoverFromError()
+    } else {
+      console.error('[Flow] 达到最大重试次数，重新开始循环')
+      rotationRetryCount.value = 0
+      clearAllTimers()
+      startNewCycle()
+    }
+  }
+
+  // === 新增：恢复函数 ===
+  const recoverFromError = async () => {
+    if (isRecovering.value) return
+    
+    try {
+      isRecovering.value = true
+      console.log('[Flow] 开始恢复流程')
+
+      // 重新获取通知数据
+      await timeTask('pdf')
+      
+      // 恢复到最后一个成功的状态，或重新开始
+      if (lastSuccessfulState.value) {
+        currentNoticeIndex.value = lastSuccessfulState.value.noticeIndex
+        currentNoticePage.value = lastSuccessfulState.value.noticePage
+        currentScreenState.value = lastSuccessfulState.value.screenState
+      } else {
+        currentNoticeIndex.value = 0
+        currentNoticePage.value = 1
+      }
+
+      // 重新开始轮播
+      await rotateNotice()
+
+    } catch (error) {
+      console.error('[Flow] 恢复失败:', error)
+      startNewCycle()
+    } finally {
+      isRecovering.value = false
     }
   }
 

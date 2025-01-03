@@ -152,11 +152,10 @@ const navigation = [
 
 const getNoticeTypeName = (type: string): string => {
   const types: Record<string, string> = {
-    common: '一般通告',
     urgent: '緊急通告',
-    corporate: '法團通告',
+    building: '法團通告',
     government: '政府通告',
-    system: '系統通告'
+    normal: '一般通告'
   }
   return types[type] || '其他'
 }
