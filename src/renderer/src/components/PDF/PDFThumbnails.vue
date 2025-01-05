@@ -24,6 +24,7 @@
 <script setup lang="ts">
 import { defineProps, defineEmits, ref, onMounted, nextTick, onBeforeUnmount } from 'vue'
 import PDF from 'pdf-vue3'
+import type { PDFDocumentProxy } from 'pdf-vue3'
 
 interface Props {
   pdfUrl: string
@@ -134,33 +135,45 @@ const handleContainerClick = (event: Event) => {
 /**
  * 清理事件监听器和添加的 p 元素
  */
-const cleanup = () => {
-  if (!thumbnailsContainer.value) return
-
-  // 移除事件监听器
-  thumbnailsContainer.value.removeEventListener('click', handleContainerClick)
-  ;(thumbnailsContainer.value as any).__eventListenerAttached = false
-
-  // 移除 data-page-number 属性和页码 p 元素
-  const canvases = thumbnailsContainer.value.querySelectorAll('canvas')
-  canvases.forEach((canvas) => {
-    // 移除 data-page-number 属性
-    canvas.removeAttribute('data-page-number')
-
-    // 移除页码 p 元素
-    const nextSibling = canvas.nextElementSibling
-    if (nextSibling && nextSibling.tagName.toLowerCase() === 'p') {
-      nextSibling.remove()
+const cleanup = async () => {
+  try {
+    // 1. 首先清理 PDF 实例，这是最重要的
+    if (pdfInstance) {
+      await pdfInstance.cleanup()
+      await pdfInstance.destroy()
+      pdfInstance = null
     }
-  })
+
+    // 2. 然后清理 DOM 相关内容，增加安全检查
+    if (thumbnailsContainer.value) {
+      // 移除事件监听器
+      thumbnailsContainer.value.removeEventListener('click', handleContainerClick)
+      ;(thumbnailsContainer.value as any).__eventListenerAttached = false
+
+      // 移除 data-page-number 属性和页码 p 元素
+      const canvases = thumbnailsContainer.value.querySelectorAll('canvas')
+      canvases.forEach((canvas) => {
+        canvas.removeAttribute('data-page-number')
+        const nextSibling = canvas.nextElementSibling
+        if (nextSibling && nextSibling.tagName.toLowerCase() === 'p') {
+          nextSibling.remove()
+        }
+      })
+    }
+  } catch (error) {
+    console.error('清理过程中出错:', error)
+  }
 }
 
-const handlePdfInit = async (pdf: any) => {
+// 添加 PDF 实例引用
+let pdfInstance: PDFDocumentProxy | null = null
+
+const handlePdfInit = async (pdf: PDFDocumentProxy) => {
   console.log('PDF Initialized:', pdf)
+  pdfInstance = pdf // 保存 PDF 实例
   const totalPages = pdf.numPages
   console.log('PDF Total Pages:', totalPages)
   
-  // 发送总页数
   emit('total-pages', totalPages)
   
   await nextTick()
@@ -170,7 +183,9 @@ const handlePdfInit = async (pdf: any) => {
 
 // 在组件卸载时进行清理
 onBeforeUnmount(() => {
-  cleanup()
+  cleanup().catch(error => {
+    console.error('组件卸载清理失败:', error)
+  })
 })
 
 // 如果需要处理组件更新时的情况，可以在这里添加监听 props.pdfUrl 的变化并重新加载

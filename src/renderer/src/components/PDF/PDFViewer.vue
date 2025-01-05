@@ -17,13 +17,15 @@
       :disable-auto-fetch="true"
       class="pdf-container"
       @on-page-change="handlePageChange"
+      @on-pdf-init="handlePdfInit"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, watch } from 'vue'
+import { defineProps, defineEmits, watch, ref, onBeforeUnmount } from 'vue'
 import PDF from 'pdf-vue3'
+import type { PDFDocumentProxy } from 'pdf-vue3'
 
 const props = defineProps<{
   pdfUrl: string
@@ -33,6 +35,30 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'page-change', page: number): void
 }>()
+
+// 添加 ref 来存储 PDF 实例
+const pdfRef = ref<any>(null)
+let pdfInstance: PDFDocumentProxy | null = null
+
+// 在 PDF 初始化时保存实例
+const handlePdfInit = (pdf: PDFDocumentProxy) => {
+  pdfInstance = pdf
+}
+
+// 组件卸载前进行清理
+onBeforeUnmount(async () => {
+  console.log('onBeforeUnmount---------', pdfInstance)
+  if (pdfInstance) {
+    try {
+      console.log('清理 PDF 实例')
+      await pdfInstance.cleanup()
+      await pdfInstance.destroy()
+      pdfInstance = null
+    } catch (error) {
+      console.error('清理 PDF 实例时出错:', error)
+    }
+  }
+})
 
 const handlePageChange = (page: number) => {
   emit('page-change', page)

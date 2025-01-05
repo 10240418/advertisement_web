@@ -375,10 +375,10 @@ const monitorDownloads = () => {
  */
 export const timeTask = async (type: 'arrearage' | 'pdf' | 'ads') => {
   // 启动监控（只在第一次调用时启动）
-  if (!window.__monitorStarted) {
-    monitorDownloads();
-    window.__monitorStarted = true;
-  }
+  // if (!window.__monitorStarted) {
+  //   monitorDownloads();
+  //   window.__monitorStarted = true;
+  // }
 
   const notificationStore = useNotificationStore();
 
