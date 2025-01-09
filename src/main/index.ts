@@ -38,7 +38,6 @@ function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1024,
     height: 2048,
-
     show: false,
     // frame: false,   // 移除窗口边框和标题栏
     resizable: true, // 允许调整窗口大小
@@ -54,7 +53,11 @@ function createWindow(): void {
   // 当窗口准备好时显示
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+    // 设置全屏
+    mainWindow.setFullScreen(true)
   })
+
+
 
   // 处理新窗口打开请求，在默认浏览器中打开链接
   mainWindow.webContents.setWindowOpenHandler((details) => {
