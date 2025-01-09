@@ -25,7 +25,6 @@
         :src="currentAd.path ? currentAd.path : currentAd.file.path"
         class="block rounded-lg aspect-video object-contain"
         :class="{ 'w-screen h-screen object-contain drop-shadow-lg': isFullscreen }"
-        muted
         autoplay
         loop
         @error="nextAd"

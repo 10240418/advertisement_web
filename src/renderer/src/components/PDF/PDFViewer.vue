@@ -5,7 +5,7 @@
       ref="pdfRef"
       :src="pdfUrl"
       :page="currentPage"
-      :pdf-width="'100%'"
+      :pdf-width="'90%'"
       :show-progress="true"
       :show-page-number="true"
       :show-page-tooltip="true"
