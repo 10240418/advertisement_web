@@ -4,8 +4,7 @@ const BASE_URL = 'http://39.108.49.167:10032'
 
 // 类型定义
 interface LoginRequest {
-  ismartId: string
-  password: string
+  deviceId: string
 }
 
 interface ArrearageRecord {
@@ -13,12 +12,39 @@ interface ArrearageRecord {
   [key: string]: string | number;  // 动态的时间-欠款键值对
 }
 
+interface BuildingInfo {
+  id: number
+  createdAt: string
+  updatedAt: string
+  deletedAt: null | string
+  name: string
+  ismartId: string
+  remark: string
+  devices: null | any[]
+  notices: null | any[]
+  advertisements: null | any[]
+}
+
+interface DeviceSettings {
+  arrearageUpdateDuration: number
+  noticeUpdateDuration: number
+  advertisementUpdateDuration: number
+  advertisementPlayDuration: number
+  noticePlayDuration: number
+  spareDuration: number
+  noticeStayDuration: number
+}
+
 interface LoginResponse {
   data: {
     id: number
-    ismartId: string
-    name: string
-    remark: string
+    createdAt: string
+    updatedAt: string
+    deletedAt: null | string
+    deviceId: string
+    building: BuildingInfo
+    buildingId: number
+    settings: DeviceSettings
   }
   message: string
   token: string
@@ -90,7 +116,7 @@ const api = {
    */
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
     const response = await axios.post<LoginResponse>(
-      `${BASE_URL}/api/admin/building/login`,
+      `${BASE_URL}/api/device/login`,
       credentials
     )
     return response.data
@@ -240,4 +266,6 @@ export type {
   LoginResponse,
   Notice,
   HealthCheckResponse,
+  BuildingInfo,
+  DeviceSettings,
 };

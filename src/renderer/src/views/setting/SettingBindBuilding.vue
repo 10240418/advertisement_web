@@ -18,28 +18,14 @@
             </label>
             <input
               id="username"
-              v-model="loginData.ismartId"
+              v-model="loginData.deviceId"
               type="text"
               class="w-full h-14 px-4 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-lg"
               required
             />
           </div>
 
-          <div class="relative">
-            <label 
-              for="password"
-              class="block text-lg font-semibold text-gray-700 mb-2"
-            >
-              密码
-            </label>
-            <input
-              id="password"
-              v-model="loginData.password"
-              type="password"
-              class="w-full h-14 px-4 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-lg"
-              required
-            />
-          </div>
+
 
           <button 
             class="w-full h-14 bg-[#007AFF] hover:bg-blue-600 text-white font-bold text-lg rounded-lg shadow-lg transition-colors duration-200 flex items-center justify-center tracking-wider"
@@ -66,18 +52,19 @@ import { useNoticeStore } from '@renderer/stores/notice_store';
 import { useNotificationStore } from '@renderer/stores/noticefication_store';
 import { useArrearageStore } from '@renderer/stores/arrearage_store';
 import { useTaskStore } from '@renderer/stores/task_store';
+import { useFlowStore } from '@renderer/stores/flow_store';
 
 const router = useRouter();
 const notificationStore = useNotificationStore();
 const BuildingStore = useBuildingStore();
 const AdsStore = useAdsStore();
 const NoticeStore = useNoticeStore();
+const FlowStore = useFlowStore();
 const ArrearageStore = useArrearageStore();
 
 // Login form data
 const loginData = ref<LoginRequest>({
-  ismartId: '0314100',
-  password: 'admin123'
+  deviceId: 'DEVICE_002',
 });
 
 const handleLogin = async () => {
@@ -90,12 +77,13 @@ const handleLogin = async () => {
     const token = response.token;
     
     // 保存登录信息和token
-    localStorage.setItem('ismartId', loginData.value.ismartId);
-    localStorage.setItem('password', loginData.value.password);
+    localStorage.setItem('deviceId', loginData.value.deviceId);
     localStorage.setItem('token', token);
     
-    // 设置大楼信息
+    // 设置大楼信息和配置
+    FlowStore.updateConfigFromSettings(response.data.settings);
     BuildingStore.setBuilding(response.data);
+    taskStore.updateIntervalsFromSettings(response.data.settings);
     
     // 获取广告列表
     const adsResponse = await api.getAdvertisements(token);

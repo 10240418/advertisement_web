@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { timeTask } from '@renderer/utils/time-task';
 import { useNotificationStore } from './noticefication_store';
+import type { DeviceSettings } from './building_store';
 
 export const useTaskStore = defineStore('task', {
   state: () => ({
@@ -32,6 +33,19 @@ export const useTaskStore = defineStore('task', {
   },
 
   actions: {
+    // 从设备设置更新间隔时间
+    updateIntervalsFromSettings(settings: DeviceSettings) {
+      this.intervals = {
+        arrearage: settings.arrearageUpdateDuration,
+        pdf: settings.noticeUpdateDuration,
+        ads: settings.advertisementUpdateDuration
+      };
+      
+      // 重启所有定时任务以应用新的间隔时间
+      this.stopAllTasks();
+      this.startAllTasks();
+    },
+
     // 设置各类数据的更新间隔
     setInterval(type: keyof typeof this.intervals, minutes: number) {
       this.intervals[type] = Math.max(1, minutes);

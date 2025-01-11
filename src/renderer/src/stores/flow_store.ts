@@ -13,6 +13,15 @@ import { timeTask } from '@renderer/utils/time-task'
 export type ScreenState = 'menu' | 'fullscreen-ad' | 'arrearage-table' | 'notice'
 
 // 定义各种计时器的时间配置接口
+interface DeviceSettings {
+  arrearageUpdateDuration: number;
+  noticeUpdateDuration: number;
+  advertisementUpdateDuration: number;
+  advertisementPlayDuration: number;
+  noticePlayDuration: number;
+  spareDuration: number;
+  noticeStayDuration: number;
+}
 interface TimerConfig {
   idle: number      // 空闲超时时间
   display: number   // 显示持续时间
@@ -44,9 +53,9 @@ export const useFlowStore = defineStore('flow', () => {
   // === 计时器配置（毫秒） ===
   const timeoutConfig: TimerConfig = {
     idle: 5000,        // 5秒空闲
-    display: 30000,     // 30秒显示
-    notice: 10000,      // 10秒通知
-    fullscreen: 10000,  // 10秒全屏
+    display: 30000,    // 30秒显示
+    notice: 10000,     // 10秒通知
+    fullscreen: 10000, // 10秒全屏
     pdfPage: 5000      // 每页停留5秒
   }
 
@@ -445,6 +454,16 @@ export const useFlowStore = defineStore('flow', () => {
     isError.value = false
   }
 
+  // === 添加新的配置获取方法 ===
+  const updateConfigFromSettings = (settings: DeviceSettings) => {
+    if (settings) {
+      timeoutConfig.idle = settings.spareDuration * 1000;
+      timeoutConfig.display = settings.advertisementPlayDuration * 1000;
+      timeoutConfig.notice = settings.noticePlayDuration * 1000;
+      timeoutConfig.pdfPage = settings.noticeStayDuration * 1000;
+    }
+  }
+
   // === 返回store的公共接口 ===
   return {
     // 状态
@@ -487,6 +506,7 @@ export const useFlowStore = defineStore('flow', () => {
     lastArrearageTablePage,
     setLastArrearageTablePage: (page: number) => {
       lastArrearageTablePage.value = page;
-    }
+    },
+    updateConfigFromSettings,
   }
 })

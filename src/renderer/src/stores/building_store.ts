@@ -3,13 +3,31 @@ import { defineStore } from 'pinia';
 // 类型定义
 interface Building {
   id: number;
-  ismartId: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: null | string;
   name: string;
+  ismartId: string;
   remark: string;
+  devices: null | any[];
+  notices: null | any[];
+  advertisements: null | any[];
+}
+
+interface DeviceSettings {
+  arrearageUpdateDuration: number;
+  noticeUpdateDuration: number;
+  advertisementUpdateDuration: number;
+  advertisementPlayDuration: number;
+  noticePlayDuration: number;
+  spareDuration: number;
+  noticeStayDuration: number;
 }
 
 interface BuildingState {
   building: Building | null;
+  deviceId: string | null;
+  settings: DeviceSettings | null;
   isAuthenticated: boolean;
   error: string | null;
 }
@@ -17,6 +35,8 @@ interface BuildingState {
 export const useBuildingStore = defineStore('building', {
   state: (): BuildingState => ({
     building: null,
+    deviceId: null,
+    settings: null,
     isAuthenticated: false,
     error: null
   }),
@@ -34,6 +54,9 @@ export const useBuildingStore = defineStore('building', {
     // 获取ismartId
     getIsmartId: (state): string => state.building?.ismartId ?? '',
     
+    // 获取设备设置
+    getSettings: (state): DeviceSettings | null => state.settings,
+    
     // 检查是否已认证
     isLoggedIn: (state): boolean => state.isAuthenticated,
     
@@ -43,9 +66,11 @@ export const useBuildingStore = defineStore('building', {
 
   actions: {
     // 设置建筑信息
-    setBuilding(building: Building) {
+    setBuilding(loginResponse: any) {
       try {
-        this.building = building;
+        this.building = loginResponse.building;
+        this.deviceId = loginResponse.deviceId;
+        this.settings = loginResponse.settings;
         this.isAuthenticated = true;
         this.error = null;
       } catch (error) {
@@ -57,6 +82,8 @@ export const useBuildingStore = defineStore('building', {
     // 清除建筑信息
     clearBuilding() {
       this.building = null;
+      this.deviceId = null;
+      this.settings = null;
       this.isAuthenticated = false;
       this.error = null;
     },
@@ -89,4 +116,4 @@ export const useBuildingStore = defineStore('building', {
 });
 
 // 导出类型
-export type { Building, BuildingState };
+export type { Building, BuildingState, DeviceSettings };
