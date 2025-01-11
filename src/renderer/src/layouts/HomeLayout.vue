@@ -11,10 +11,8 @@
     </div>
 
     <!-- 主内容区域 -->
-    <div class="flex-1 w-full relative overflow-auto "> 
-   
+    <div class="flex-1 w-full relative overflow-auto"> 
       <RouterView />
-     
     </div>
 
     <!-- 底部区域 - 固定在底部 -->
@@ -24,23 +22,46 @@
   </div>
 </template>
 
-<script setup>
-import { onBeforeMount } from 'vue';
+<script setup lang="ts">
+import { onMounted, onBeforeUnmount } from 'vue';
+import api from '@renderer/apis';
 
 import AdvertisementTop from '@renderer/components/ADTop/AdvertisementTop.vue';
 import CombinedFooter from '@renderer/components/footer/CombinedFooter.vue';
 import NavBar from '@renderer/components/NavBar/NavBar.vue';
-import { useTaskStore } from '@renderer/stores/task_store';
 
-const taskStore = useTaskStore()
+let healthCheckInterval: number | undefined;
 
-onBeforeMount(() => {
+// 心跳检测函数
+const sendHealthCheck = async () => {
   try {
-    if (localStorage.getItem('updateInterval')) {
-      taskStore.initialize()
-    }
+    await api.sendHealthCheck();
+    console.log('心跳检测成功:', new Date().toLocaleString());
   } catch (error) {
-    console.error('初始化任务存储时出错:', error)
+    console.error('心跳检测失败:', error);
   }
-})
+};
+
+// 启动心跳检测
+const startHealthCheck = () => {
+  // 立即执行一次
+  void sendHealthCheck();
+  
+  // 设置5分钟定时器
+  healthCheckInterval = window.setInterval(() => {
+    void sendHealthCheck();
+  }, 5 * 60 * 1000);
+};
+
+onMounted(() => {
+  startHealthCheck();
+});
+
+// 组件销毁前清理定时器
+onBeforeUnmount(() => {
+  if (healthCheckInterval) {
+    clearInterval(healthCheckInterval);
+    healthCheckInterval = undefined;
+  }
+});
 </script>

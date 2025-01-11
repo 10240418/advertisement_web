@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://39.108.49.167:10031'
+const BASE_URL = 'http://39.108.49.167:10032'
 
 // 类型定义
 interface LoginRequest {
@@ -74,6 +74,12 @@ interface ApiResponse<T> {
   data: T;
   message?: string;
   status?: number;
+}
+
+// 在已有的接口定义后添加心跳包响应接口
+interface HealthCheckResponse {
+  status: number;
+  message: string;
 }
 
 // API 实现
@@ -154,6 +160,28 @@ const api = {
     const data = await response.json();
     console.log(data,response.status,response)
     return { data, status: response.status };
+  },
+
+  /**
+   * 发送心跳包请求
+   * @param token Bearer token (可选，如果不传则从localStorage获取)
+   */
+  sendHealthCheck: async (token?: string): Promise<ApiResponse<HealthCheckResponse>> => {
+    const authToken = token || getStoredToken();
+    if (!authToken) {
+      throw new Error('No token available');
+    }
+
+    const response = await axios.post<ApiResponse<HealthCheckResponse>>(
+      `${BASE_URL}/api/device/client/health_test`,
+      {},  // 空对象作为请求体
+      {
+        headers: {
+          Authorization: `Bearer ${authToken}`
+        }
+      }
+    );
+    return response.data;
   }
 }
 
@@ -211,4 +239,5 @@ export type {
   LoginRequest,
   LoginResponse,
   Notice,
+  HealthCheckResponse,
 };
