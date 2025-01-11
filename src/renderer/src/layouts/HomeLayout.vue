@@ -24,13 +24,83 @@
 
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
 import api from '@renderer/apis';
 
 import AdvertisementTop from '@renderer/components/ADTop/AdvertisementTop.vue';
 import CombinedFooter from '@renderer/components/footer/CombinedFooter.vue';
 import NavBar from '@renderer/components/NavBar/NavBar.vue';
 
+import { useAdsStore } from '@renderer/stores/ads_store';
+import { useBuildingStore } from '@renderer/stores/building_store';
+import { useNoticeStore } from '@renderer/stores/notice_store';
+import { useNotificationStore } from '@renderer/stores/noticefication_store';
+import { useTaskStore } from '@renderer/stores/task_store';
+import { useFlowStore } from '@renderer/stores/flow_store';
+import { getDeviceId } from '@renderer/utils/device';
+
+const router = useRouter();
+const notificationStore = useNotificationStore();
+const BuildingStore = useBuildingStore();
+const AdsStore = useAdsStore();
+const NoticeStore = useNoticeStore();
+const FlowStore = useFlowStore();
+
 let healthCheckInterval: number | undefined;
+
+// 自动登录函数
+const handleAutoLogin = async () => {
+  // 如果已经有token，说明已经登录过了
+  const existingToken = localStorage.getItem('token');
+  if (existingToken) {
+    return;
+  }
+
+  try {
+    const deviceId = await getDeviceId();
+    const loginData = {
+      deviceId
+    };
+    
+    // 调用登录接口
+    const response = await api.login(loginData);
+    const token = response.token;
+    
+    // 保存登录信息和token
+    localStorage.setItem('deviceId', loginData.deviceId);
+    localStorage.setItem('token', token);
+    
+    // 获取 taskStore 实例
+    const taskStore = useTaskStore();
+    
+    // 设置大楼信息和配置
+    FlowStore.updateConfigFromSettings(response.data.settings);
+    BuildingStore.setBuilding(response.data);
+    taskStore.updateIntervalsFromSettings(response.data.settings);
+    
+    // 获取广告列表
+    const adsResponse = await api.getAdvertisements(token);
+    AdsStore.setAds(adsResponse.data);
+    
+    // 获取通知列表
+    const noticesResponse = await api.getNotices(token);
+    NoticeStore.setNotices(noticesResponse.data);
+    
+    // 立即执行一次所有任务的下载
+    await taskStore.executeTask('ads');
+    await taskStore.executeTask('pdf');
+    await taskStore.executeTask('arrearage');
+    
+    // 启动定时任务
+    taskStore.startAllTasks();
+    
+    notificationStore.addNotification('自动登录成功', 'success');
+  } catch (error) {
+    console.error('自动登录失败:', error);
+    notificationStore.addNotification('自动登录失败', 'error');
+    router.push('/setting');
+  }
+};
 
 // 心跳检测函数
 const sendHealthCheck = async () => {
@@ -54,6 +124,9 @@ const startHealthCheck = () => {
 };
 
 onMounted(() => {
+  // 执行自动登录
+  handleAutoLogin();
+  // 启动心跳检测
   startHealthCheck();
 });
 

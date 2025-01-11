@@ -22,6 +22,7 @@ const routes: Array<RouteRecordRaw> = [
       { path: '/arrearage-find', name: 'ArrearageFind', component: ArrearageFind },
       { path: '/arrearage-table', name: 'ArrearageTable', component: ArrearageTable },
       { path: '/pdfPreview', name: 'PdfPreview', component: () => import('../views/PDF/PdfPreview.vue') }
+      
     
     ]
   }

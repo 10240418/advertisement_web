@@ -77,7 +77,7 @@ const handleSecretClick = () => {
     clickCount.value = 0
     const token = localStorage.getItem('token')
     if (token) {
-      router.push('/buildingDetail')
+      router.push('/setting')
     } else {
       router.push('/setting')
     }

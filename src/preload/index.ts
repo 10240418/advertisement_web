@@ -7,6 +7,7 @@ import { electronAPI } from '@electron-toolkit/preload';
 
 // Custom APIs for renderer
 const api = {
+  getDeviceId: () => ipcRenderer.invoke('get-device-id'),
   downloadPDF: (PathName: string, url: string, filename: string) => {
     return ipcRenderer.invoke('download-pdf', { PathName, url, filename })
   },
@@ -19,7 +20,6 @@ const api = {
   getWindowSize: () => ipcRenderer.invoke('get-window-size'),
   onWindowResize: (callback) => {
     ipcRenderer.on('window-resize', (_event, size) => {
-      // console.log('Received size:', size)
       callback(size)
     })
   }
@@ -32,7 +32,6 @@ if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
-
   } catch (error) {
     console.error(error)
   }

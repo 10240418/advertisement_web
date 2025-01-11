@@ -14,14 +14,15 @@
               for="username"
               class="block text-lg font-semibold text-gray-700 mb-2"
             >
-              用户名
+              设备ID
             </label>
             <input
               id="username"
               v-model="loginData.deviceId"
               type="text"
               class="w-full h-14 px-4 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-lg"
-              required
+              disabled
+              readonly
             />
           </div>
 
@@ -40,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 
 import { useRouter } from 'vue-router';
 
@@ -53,6 +54,7 @@ import { useNotificationStore } from '@renderer/stores/noticefication_store';
 import { useArrearageStore } from '@renderer/stores/arrearage_store';
 import { useTaskStore } from '@renderer/stores/task_store';
 import { useFlowStore } from '@renderer/stores/flow_store';
+import { getDeviceId } from '@renderer/utils/device';
 
 const router = useRouter();
 const notificationStore = useNotificationStore();
@@ -64,7 +66,13 @@ const ArrearageStore = useArrearageStore();
 
 // Login form data
 const loginData = ref<LoginRequest>({
-  deviceId: 'DEVICE_002',
+  deviceId: '',
+});
+
+// 初始化设备ID
+onMounted(async () => {
+  loginData.value.deviceId = await getDeviceId();
+  console.log(loginData.value.deviceId);
 });
 
 const handleLogin = async () => {
@@ -106,6 +114,7 @@ const handleLogin = async () => {
     
     // 跳转到详情页
     router.push('/buildingDetail');
+
   } catch (error) {
     console.error('API error:', error);
     notificationStore.addNotification('绑定失败，请检查账号密码', 'error');

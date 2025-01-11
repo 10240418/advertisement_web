@@ -9,6 +9,8 @@ import {
 import fs from 'fs';
 import path, { join } from 'path';
 import { pipeline } from 'stream/promises';
+import { machineIdSync } from 'node-machine-id';
+import * as crypto from 'crypto';
 
 import {
   electronApp,
@@ -266,6 +268,27 @@ ipcMain.handle('download-image', async (_event, { PathName, url, filename }) => 
     return { success: false, error: error.message || '未知错误' }
   }
 })
+
+// 添加 IPC 处理器来获取设备 ID
+ipcMain.handle('get-device-id', () => {
+  try {
+    // 获取机器 ID
+    const machineId = machineIdSync();
+    
+    // 使用 app.getPath('userData') 获取应用程序数据目录
+    const appPath = app.getPath('userData');
+    
+    // 组合信息并创建哈希
+    const dataToHash = `${machineId}-${appPath}`;
+    const hash = crypto.createHash('md5').update(dataToHash).digest('hex');
+    
+    // 取前8位并加上前缀
+    return `DEVICE_${hash.substring(0, 8).toUpperCase()}`;
+  } catch (error) {
+    console.error('获取机器ID失败:', error);
+    return 'DEVICE_UNKNOWN';
+  }
+});
 
 // 这里可以添加应用程序的其他主进程代码
 // 也可以将它们放在单独的文件中并在这里导入
