@@ -133,7 +133,7 @@ const api = {
     }
 
     const response = await axios.get<ApiResponse<Advertisement[]>>(
-      `${BASE_URL}/api/admin/building/client/advertisements`,
+      `${BASE_URL}/api/device/client/advertisements`,
       {
         headers: {
           Authorization: `Bearer ${authToken}`
@@ -154,7 +154,7 @@ const api = {
     }
 
     const response = await axios.get<ApiResponse<Notice[]>>(
-      `${BASE_URL}/api/admin/building/client/notices`,
+      `${BASE_URL}/api/device/client/notices`,
       {
         headers: {
           Authorization: `Bearer ${authToken}`

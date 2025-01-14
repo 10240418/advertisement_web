@@ -73,6 +73,10 @@ export const useBuildingStore = defineStore('building', {
         this.settings = loginResponse.settings;
         this.isAuthenticated = true;
         this.error = null;
+        // 保存ismartId
+        localStorage.setItem('ismartId',loginResponse.building.ismartId );
+    
+
       } catch (error) {
         this.error = error instanceof Error ? error.message : '设置建筑信息失败';
         console.error('Failed to set building:', error);

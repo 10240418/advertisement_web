@@ -79,6 +79,10 @@
             <span class="text-gray-600 w-20">iSmart ID</span>
             <span class="text-gray-800 font-medium">{{ building?.ismartId || '未設置' }}</span>
           </div>
+          <div class="flex items-center text-sm">
+            <span class="text-gray-600 w-20">設備ID</span>
+            <span class="text-gray-800 font-medium">{{ deviceId }}</span>
+          </div>
         </div>
       </div>
 
@@ -126,16 +130,11 @@
         <div v-if="currentSettingTab === 'intervals'" class="space-y-4">
           <div v-for="config in intervalConfigs" :key="config.type" class="flex items-center gap-3">
             <div class="flex items-center gap-2 w-32">
-            <label class="text-sm text-gray-600">{{ config.label }}</label>
+              <label class="text-sm text-gray-600">{{ config.label }}</label>
             </div>
-            <input
-              v-model.number="intervals[config.type]"
-              type="number"
-              :min="config.min"
-              class="w-24 px-3 py-1.5 text-sm border text-gray-900 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              @blur="handleIntervalChange(config.type)"
-              @keyup.enter="handleIntervalChange(config.type)"
-            />
+            <div class="w-24 px-3 py-1.5 text-sm text-gray-900 bg-gray-50 rounded-lg">
+              {{ intervals[config.type] }}
+            </div>
             <span class="text-sm text-gray-600">分鐘</span>
           </div>
         </div>
@@ -147,13 +146,9 @@
             <div class="flex items-center gap-2 w-32">
               <label class="text-sm text-gray-900">閒置時間</label>
             </div>
-            <input
-              v-model.number="flowConfig.idle"
-              type="number"
-              min="5"
-              class="w-24 px-3 py-1.5 text-sm border text-gray-900 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              @blur="handleFlowConfigChange('idle')"
-            />
+            <div class="w-24 px-3 py-1.5 text-sm text-gray-900 bg-gray-50 rounded-lg">
+              {{ flowConfig.idle }}
+            </div>
             <span class="text-sm text-gray-900">秒</span>
           </div>
 
@@ -162,13 +157,9 @@
             <div class="flex items-center gap-2 w-32">
               <label class="text-sm text-gray-900">廣告展示</label>
             </div>
-            <input
-              v-model.number="flowConfig.display"
-              type="number"
-              min="10"
-              class="w-24 px-3 py-1.5 text-sm border text-gray-900 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              @blur="handleFlowConfigChange('display')"
-            />
+            <div class="w-24 px-3 py-1.5 text-sm text-gray-900 bg-gray-50 rounded-lg">
+              {{ flowConfig.display }}
+            </div>
             <span class="text-sm text-gray-900">秒</span>
           </div>
 
@@ -177,13 +168,9 @@
             <div class="flex items-center gap-2 w-32">
               <label class="text-sm text-gray-900">通知展示</label>
             </div>
-            <input
-              v-model.number="flowConfig.notice"
-              type="number"
-              min="5"
-              class="w-24 px-3 py-1.5 text-sm border text-gray-900 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              @blur="handleFlowConfigChange('notice')"
-            />
+            <div class="w-24 px-3 py-1.5 text-sm text-gray-900 bg-gray-50 rounded-lg">
+              {{ flowConfig.notice }}
+            </div>
             <span class="text-sm text-gray-900">秒</span>
           </div>
 
@@ -192,13 +179,9 @@
             <div class="flex items-center gap-2 w-32">
               <label class="text-sm text-gray-900">PDF停留</label>
             </div>
-            <input
-              v-model.number="flowConfig.pdfPage"
-              type="number"
-              min="3"
-              class="w-24 px-3 py-1.5 text-sm border text-gray-900 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              @blur="handleFlowConfigChange('pdfPage')"
-            />
+            <div class="w-24 px-3 py-1.5 text-sm text-gray-900 bg-gray-50 rounded-lg">
+              {{ flowConfig.pdfPage }}
+            </div>
             <span class="text-sm text-gray-900">秒</span>
           </div>
         </div>
@@ -208,7 +191,7 @@
           @click="handleUnbind"
           class="w-full mt-6 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">
      
-          解除綁定
+          清除内容
         </button>
       </div>
     </div>
@@ -229,6 +212,7 @@ import { useNoticeStore } from '@renderer/stores/notice_store';
 import { useNotificationStore } from '@renderer/stores/noticefication_store';
 import { useTaskStore } from '@renderer/stores/task_store';
 import { useFlowStore } from '@renderer/stores/flow_store'
+import { getDeviceId } from '@renderer/utils/device';
 
 const router = useRouter();
 const notificationStore = useNotificationStore();
@@ -317,7 +301,6 @@ const handleUnbind = async () => {
   noticeStore.clearNotices();
   taskStore.stopAllTasks();
   localStorage.removeItem('ismartId');
-  localStorage.removeItem('password');
   localStorage.removeItem('token');
 
   notificationStore.addNotification('解除綁定成功', 'success');
@@ -341,29 +324,18 @@ const flowConfig = ref({
   pdfPage: flowStore.timeoutConfig.pdfPage / 1000
 });
 
-// 处理流程配置变更
-const handleFlowConfigChange = (type: keyof typeof flowConfig.value) => {
-  const value = flowConfig.value[type];
-  const minValues = {
-    idle: 1,
-    display: 1,
-    notice: 1,
-    pdfPage: 1
-  };
 
-  // 确保不小于最小值
-  if (value < minValues[type]) {
-    flowConfig.value[type] = minValues[type];
-  }
 
-  // 更新flow store的配置（转换为毫秒）
-  flowStore.timeoutConfig[type] = flowConfig.value[type] * 1000;
+// 添加设备ID的响应式变量
+const deviceId = ref('');
+
+// 在 onBeforeMount 中获取设备ID
+onBeforeMount(async () => {
+  // 保留原有的初始化代码...
   
-  // 保存到本地存储
-  localStorage.setItem('flowConfig', JSON.stringify(flowStore.timeoutConfig));
-  
-  notificationStore.addNotification(`${type}設置成功`, 'success');
-};
+  // 获取设备ID
+  deviceId.value = await getDeviceId();
+});
 
 // 初始化
 onBeforeMount(() => {

@@ -35,10 +35,11 @@ export const useTaskStore = defineStore('task', {
   actions: {
     // 从设备设置更新间隔时间
     updateIntervalsFromSettings(settings: DeviceSettings) {
+      // 后端返回的是秒，我们需要转换为分钟
       this.intervals = {
-        arrearage: settings.arrearageUpdateDuration,
-        pdf: settings.noticeUpdateDuration,
-        ads: settings.advertisementUpdateDuration
+        arrearage: Math.ceil(settings.arrearageUpdateDuration / 60),
+        pdf: Math.ceil(settings.noticeUpdateDuration / 60),
+        ads: Math.ceil(settings.advertisementUpdateDuration / 60)
       };
       
       // 重启所有定时任务以应用新的间隔时间
@@ -122,7 +123,7 @@ export const useTaskStore = defineStore('task', {
 
     // 初始化任务
     initialize() {
-      const isLoggedIn = localStorage.getItem('ismartId') && localStorage.getItem('password');
+      const isLoggedIn = localStorage.getItem('token') && localStorage.getItem('ismartId');
       if (isLoggedIn) {
         this.startAllTasks();
       }

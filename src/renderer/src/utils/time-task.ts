@@ -383,13 +383,7 @@ export const timeTask = async (type: 'arrearage' | 'pdf' | 'ads') => {
   const notificationStore = useNotificationStore();
 
   // 验证登录状态
-  const user_name = localStorage.getItem('ismartId');
-  const password = localStorage.getItem('password');
 
-  if (!user_name || !password) {
-    notificationStore.addNotification('請先登錄', 'error');
-    throw new Error('未登录状态');
-  }
 
   try {
     let response;
