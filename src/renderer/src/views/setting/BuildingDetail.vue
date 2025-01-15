@@ -135,7 +135,7 @@
             <div class="w-24 px-3 py-1.5 text-sm text-gray-900 bg-gray-50 rounded-lg">
               {{ intervals[config.type] }}
             </div>
-            <span class="text-sm text-gray-600">分鐘</span>
+            <span class="text-sm text-gray-600">秒</span>
           </div>
         </div>
 
@@ -241,9 +241,9 @@ interface IntervalConfig {
 }
 
 const intervalConfigs: IntervalConfig[] = [
-  { type: 'arrearage', label: '欠費更新間隔', min: 1 },
-  { type: 'pdf', label: 'PDF更新間隔', min: 1 },
-  { type: 'ads', label: '廣告更新間隔', min: 1 }
+  { type: 'arrearage', label: '欠費更新間隔', min: 0 },
+  { type: 'pdf', label: 'PDF更新間隔', min: 0 },
+  { type: 'ads', label: '廣告更新間隔', min: 0 }
 ];
 
 // 更新间隔
@@ -289,7 +289,7 @@ const handleIntervalChange = (type: keyof typeof intervals.value) => {
     intervals.value[type] = config.min;
   }
 
-  // 更新间隔
+  // 更新间隔（直接传递秒数）
   taskStore.setInterval(type, intervals.value[type]);
   notificationStore.addNotification(`${config.label}設置成功`, 'success');
 };

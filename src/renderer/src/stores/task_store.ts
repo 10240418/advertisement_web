@@ -8,11 +8,11 @@ export const useTaskStore = defineStore('task', {
     isRunning: false as boolean,
     retryCount: 0 as number,
     maxRetries: 3 as number,
-    // 统一使用一个对象来存储间隔时间
+    // 修改为秒为单位
     intervals: {
-      arrearage: 5,  // 欠费数据更新间隔(分钟)
-      pdf: 10,       // PDF数据更新间隔(分钟)
-      ads: 15        // 广告数据更新间隔(分钟)
+      arrearage: 300,  // 5分钟 = 300秒
+      pdf: 600,        // 10分钟 = 600秒
+      ads: 900         // 15分钟 = 900秒
     },
     // 存储各个定时器ID
     scheduledTaskIds: {
@@ -33,13 +33,13 @@ export const useTaskStore = defineStore('task', {
   },
 
   actions: {
-    // 从设备设置更新间隔时间
+    // 修改从设备设置更新间隔时间的方法
     updateIntervalsFromSettings(settings: DeviceSettings) {
-      // 后端返回的是秒，我们需要转换为分钟
+      // 后端返回的就是秒，直接使用
       this.intervals = {
-        arrearage: Math.ceil(settings.arrearageUpdateDuration / 60),
-        pdf: Math.ceil(settings.noticeUpdateDuration / 60),
-        ads: Math.ceil(settings.advertisementUpdateDuration / 60)
+        arrearage: settings.arrearageUpdateDuration,
+        pdf: settings.noticeUpdateDuration,
+        ads: settings.advertisementUpdateDuration
       };
       
       // 重启所有定时任务以应用新的间隔时间
@@ -47,9 +47,9 @@ export const useTaskStore = defineStore('task', {
       this.startAllTasks();
     },
 
-    // 设置各类数据的更新间隔
-    setInterval(type: keyof typeof this.intervals, minutes: number) {
-      this.intervals[type] = Math.max(1, minutes);
+    // 修改设置间隔的方法
+    setInterval(type: keyof typeof this.intervals, seconds: number) {
+      this.intervals[type] = Math.max(1, seconds);
       // 重启对应的定时任务
       this.stopTask(type);
       this.startTask(type);
@@ -68,10 +68,10 @@ export const useTaskStore = defineStore('task', {
       // 先清除现有的定时器
       this.stopTask(type);
       
-      // 设置新的定时器
+      // 设置新的定时器，直接使用秒数 * 1000
       this.scheduledTaskIds[type] = window.setInterval(() => {
         this.executeTask(type);
-      }, this.intervals[type] * 60 * 1000);
+      }, this.intervals[type] * 1000);
 
       // 立即执行一次
       this.executeTask(type);
