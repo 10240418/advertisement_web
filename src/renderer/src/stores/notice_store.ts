@@ -47,6 +47,7 @@ export const useNoticeStore = defineStore('notice', {
     setNotices(notices: Notice[]) {
       this.notices = notices;
       // 清理不在新数据中的已下载通知
+      console.log('setNotices', this.notices, notices, this.downloadedNotices)
       this.cleanupDownloadedNotices();
     },
 

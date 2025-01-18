@@ -1,6 +1,6 @@
 <!-- src/renderer/src/components/PDFViewer.vue -->
 <template>
-  <div class="w-full h-full flex items-center justify-center">
+  <div class="w-full h-full">
     <PDF
       ref="pdfRef"
       :src="pdfUrl"
@@ -100,19 +100,19 @@ watch(() => props.currentPage, (newPage) => {
 
 <style scoped>
 .pdf-container {
-  @apply h-full flex items-center justify-center;
+  @apply h-full;
 }
 
 .pdf-container :deep(.pdf-vue3) {
-  @apply h-full flex items-center justify-center;
+  @apply h-full;
 }
 
 .pdf-container :deep(.pdf-vue3-page-container) {
-  @apply h-full flex items-center justify-center;
+  @apply min-h-full;
 }
 
 .pdf-container :deep(.pdf-vue3-scroller) {
-  @apply overflow-hidden h-full flex items-center justify-center;
+  @apply h-full overflow-y-auto overflow-x-hidden;
 }
 
 .pdf-container :deep(.pdf-vue3-scroller::-webkit-scrollbar) {

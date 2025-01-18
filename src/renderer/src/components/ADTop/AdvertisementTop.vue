@@ -24,9 +24,15 @@
         :width="isFullscreen ? '100%' : mediaWidth"
         :src="currentAd.path ? currentAd.path : currentAd.file.path"
         class="block rounded-lg aspect-video object-contain"
-        :class="{ 'w-screen h-screen object-contain drop-shadow-lg': isFullscreen }"
+        :class="{ 
+          'w-screen h-screen object-contain drop-shadow-lg transform-gpu': isFullscreen,
+          'will-change-transform': isFullscreen 
+        }"
         autoplay
         loop
+        playsinline
+        muted
+        preload="auto"
         @error="nextAd"
         @ended="handleVideoEnd"
       ></video>
@@ -197,7 +203,8 @@ const startAdCycle = async () => {
       return
     }
 
-    const playDuration = currentAd.value?.duration || 5
+    // 使用广告自身的 duration，如果没有则使用默认值 5
+    const playDuration = ad.duration || 5
 
     startCountdown(playDuration, nextAd)
 
@@ -210,6 +217,7 @@ const startAdCycle = async () => {
       showImage()
     }
 
+    // 使用广告的 duration 设置定时器
     adTimer.value = window.setTimeout(nextAd, playDuration * 1000)
   } catch (error) {
     console.error('广告循环出错:', error)
@@ -227,27 +235,40 @@ const showVideo = () => {
   isVideoVisible.value = true
 
   if (videoElement.value) {
+    // 设置视频播放质量
+    if (isFullscreen.value) {
+      videoElement.value.style.objectFit = 'contain'
+      // 如果需要，可以限制最大分辨率
+      // videoElement.value.style.maxHeight = '1080px'
+    }
+
     const handleLoadedMetadata = () => {
       videoElement.value!.currentTime = 0
+      
+      // 设置播放品质
+      if (videoElement.value!.videoHeight > 1080) {
+        videoElement.value!.style.transform = 'scale(0.75)'
+      }
+      
       const playPromise = videoElement.value!.play()
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            // console.log('视频播放成功')
+            if (videoElement.value) {
+              videoElement.value.playbackRate = 1.0
+            }
           })
           .catch((err) => {
-            // console.log('播放时间', videoElement.value!.currentTime)
             console.warn('视频播放切换到下一个广告:', err)
+            nextAd()
           })
       }
     }
 
-    // 检查元数据是否已经加载
-    if (videoElement.value!.readyState >= 1) {
-      // HAVE_METADATA
+    if (videoElement.value.readyState >= 1) {
       handleLoadedMetadata()
     } else {
-      videoElement.value!.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true })
+      videoElement.value.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true })
     }
   }
 }

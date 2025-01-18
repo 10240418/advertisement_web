@@ -41,6 +41,7 @@ export const useAdsStore = defineStore('ads', {
     // 设置广告列表
     setAds(ads: Advertisement[]) {
       this.advertisements = ads;
+      console.log('setAds', this.advertisements, ads)
       // 清理不在新数据中的已下载广告
       this.cleanupDownloadedAds();
     },

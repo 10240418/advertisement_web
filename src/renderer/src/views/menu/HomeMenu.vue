@@ -138,7 +138,7 @@ const noticeStore = useNoticeStore()
 
 // 修改获取通知数据的方法
 const loadNotices = () => {
-  const allNotices = noticeStore.notices
+  const allNotices = noticeStore.downloadedNotices.map(item => item.notice)
   
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '無時間'
@@ -156,7 +156,6 @@ const loadNotices = () => {
       const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0
       return dateB - dateA
     })
-    .slice(0, 5)
     .map(notice => ({
       id: notice.id,
       title: notice.title,

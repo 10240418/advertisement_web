@@ -208,7 +208,7 @@ const sortedPdfSource = computed(() => {
 
 // 添加分页相关的状态
 const currentPage = ref(1)
-const itemsPerPage = 3
+const itemsPerPage = 7
 
 // 计算总页数和当前页的数据
 const totalPages = computed(() => {
