@@ -29,23 +29,17 @@
                 weatherData_today?.temperature?.data.find((item) => item.place === '九龙城')?.value
               }}°
             </p>
-            <p class="text-xs font-medium text-neutral/80">九龙城</p>
+            <p class="text-xs font-medium text-neutral/80">九龍城</p>
           </div>
 
           <div class="flex justify-center items-center">
-            <img 
-              :src="getWeatherIcon(weatherData_today?.icon[0] || 50)" 
-              alt="Weather Icon"
-              class="w-16 h-16 object-contain filter-primary"
-            />
+            <img :src="getWeatherIcon(weatherData_today?.icon[0] || 50)" alt="Weather Icon"
+              class="w-16 h-16 object-contain filter-primary" />
           </div>
 
           <div class="flex flex-col justify-center gap-1.5 overflow-auto">
-            <div 
-              v-for="(warning, key) in weatherData_warning" 
-              :key="key"
-              class="px-2 py-1 bg-accent/5 rounded-lg border border-accent/10"
-            >
+            <div v-for="(warning, key) in weatherData_warning" :key="key"
+              class="px-2 py-1 bg-accent/5 rounded-lg border border-accent/10">
               <p class="text-[10px] font-medium text-accent/90 text-center truncate">
                 {{ warning.name }}
               </p>
@@ -56,30 +50,23 @@
 
       <!-- Right Section - Rotating Content -->
       <Transition name="fade" mode="out-in">
-        <div v-if="showWeather" class="flex-1 bg-white rounded-xl p-4 border border-grey shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+        <div v-if="showWeather"
+          class="flex-1 bg-white rounded-xl p-4 border border-grey shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
           <div class="grid grid-cols-5 gap-3 h-full">
-            <div
-              v-for="(forecast, index) in weatherData_forecast?.weatherForecast?.slice(0, 5)"
-              :key="index"
-              class="flex flex-col items-center justify-between py-1.5"
-            >
-              <div 
-                :class="[
-                  'px-3 py-1 rounded-lg text-xs font-medium w-full text-center',
-                  index === 0 
-                    ? 'bg-primary/10 text-primary/90' 
-                    : 'bg-neutral/5 text-neutral/80'
-                ]"
-              >
+            <div v-for="(forecast, index) in weatherData_forecast?.weatherForecast?.slice(0, 5)" :key="index"
+              class="flex flex-col items-center justify-between py-1.5">
+              <div :class="[
+                'px-3 py-1 rounded-lg text-xs font-medium w-full text-center',
+                index === 0
+                  ? 'bg-primary/10 text-primary/90'
+                  : 'bg-neutral/5 text-neutral/80'
+              ]">
                 {{ index === 0 ? 'Tomorrow' : forecast?.week?.slice(0, 3) }}
               </div>
 
               <div class="flex-1 flex items-center">
-                <img 
-                  :src="getWeatherIcon(forecast?.ForecastIcon || 50)" 
-                  alt="Forecast Icon"
-                  class="w-14 h-14 object-contain filter-primary"
-                />
+                <img :src="getWeatherIcon(forecast?.ForecastIcon || 50)" alt="Forecast Icon"
+                  class="w-14 h-14 object-contain filter-primary" />
               </div>
 
               <div class="flex flex-col items-center gap-0.5">
@@ -99,16 +86,12 @@
             <div class="h-full flex items-center gap-4">
               <div class="flex-shrink-0">
                 <div class="w-32 h-32 bg-neutral/5 rounded-lg flex items-center justify-center">
-                  <img
-                    src="@renderer/assets/qr-app.png"
-                    alt="移动应用二维码"
-                    class="w-28 h-28 object-contain"
-                  />
+                  <img src="@renderer/assets/qr-app.png" alt="" class="w-28 h-28 object-contain" />
                 </div>
               </div>
               <div class="flex-1">
-                <p class="text-sm font-medium text-primary mb-1">移动应用</p>
-                <p class="text-xs text-neutral/70">扫描二维码下载手机APP</p>
+                <p class="text-sm font-medium text-primary mb-1">移動應用</p>
+                <p class="text-xs text-neutral/70">掃QRCode下載APP</p>
               </div>
             </div>
           </div>
@@ -117,16 +100,12 @@
             <div class="h-full flex items-center gap-4">
               <div class="flex-shrink-0">
                 <div class="w-32 h-32 bg-neutral/5 rounded-lg flex items-center justify-center">
-                  <img
-                    src="@renderer/assets/qr-wechat.png"
-                    alt="微信公众号二维码"
-                    class="w-28 h-28 object-contain"
-                  />
+                  <img src="@renderer/assets/qr-wechat.png" alt="微信公众号二维码" class="w-28 h-28 object-contain" />
                 </div>
               </div>
               <div class="flex-1">
-                <p class="text-sm font-medium text-primary mb-1">微信公众号</p>
-                <p class="text-xs text-neutral/70">扫描关注获取最新资讯</p>
+                <p class="text-sm font-medium text-primary mb-1">微信公眾號</p>
+                <p class="text-xs text-neutral/70">掃QRCode追蹤最新訊息</p>
               </div>
             </div>
           </div>
@@ -257,8 +236,8 @@ const fetchWeatherData = async () => {
   try {
     const [forecastRes, todayRes, warningRes] = await Promise.all([
       axios.get('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=en'),
-      axios.get('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=sc'),
-      axios.get('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=sc')
+      axios.get('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc'),
+      axios.get('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc')
     ])
 
     weatherData_forecast.value = forecastRes.data
@@ -273,7 +252,7 @@ const fetchWeatherData = async () => {
 onMounted(() => {
   fetchWeatherData()
   startRotation()
-  
+
   // 添加样式
   const style = document.createElement('style')
   style.textContent = `
@@ -301,4 +280,4 @@ onUnmounted(() => {
 .fade-leave-to {
   opacity: 0;
 }
-</style> 
+</style>
