@@ -17,7 +17,7 @@ const noticeStore = useNoticeStore()
 
 const updateSources = () => {
   // 合并所有类型的通知
-  const allNotices = noticeStore.notices.map(notice => ({
+  const allNotices = noticeStore.downloadedNotices.map(item => item.notice).map(notice => ({
     id: notice.id,
     title: notice.title,
     type: notice.type,
@@ -27,15 +27,8 @@ const updateSources = () => {
   }))
 
   // 使用 Map 去重，以 id 为键，保留最新的记录
-  const uniqueNotices = new Map()
-  allNotices.forEach(notice => {
-    const existing = uniqueNotices.get(notice.id)
-    if (!existing || (notice.created_at && (!existing.created_at || new Date(notice.created_at) > new Date(existing.created_at)))) {
-      uniqueNotices.set(notice.id, notice)
-    }
-  })
 
-  pdfSources.value = Array.from(uniqueNotices.values())
+  pdfSources.value = allNotices
 }
 
 // 监听 store 变化
