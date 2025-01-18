@@ -16,7 +16,7 @@
     </div>
 
     <!-- 底部区域 - 固定在底部 -->
-    <div class="w-full h-[15%] shadow-inner bg-white shrink-0">
+    <div class="w-full h-[15rem]  shadow-inner bg-white shrink-0">
       <CombinedFooter class="w-full h-full" />
     </div>
   </div>

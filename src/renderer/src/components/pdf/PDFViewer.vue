@@ -1,17 +1,16 @@
 <!-- src/renderer/src/components/PDFViewer.vue -->
 <template>
-  <div class="w-full h-full">
+  <div class="w-full h-full flex items-center justify-center">
     <PDF
       ref="pdfRef"
       :src="pdfUrl"
       :page="currentPage"
-      :pdf-width="'90%'"
+      :pdf-width="pdfWidth"
       :show-progress="true"
-      :show-page-number="true"
       :show-page-tooltip="true"
       :show-back-to-top-btn="true"
       :scroll-threshold="0"
-      :row-gap="10"
+      :row-gap="0"
       :use-system-fonts="false"
       :disable-stream="true"
       :disable-auto-fetch="true"
@@ -23,34 +22,61 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, watch, ref, onBeforeUnmount } from 'vue'
+import { defineProps, defineEmits, watch, ref, computed, onBeforeUnmount } from 'vue'
 import PDF from 'pdf-vue3'
 import type { PDFDocumentProxy } from 'pdf-vue3'
 
 const props = defineProps<{
   pdfUrl: string
   currentPage: number
+  containerSize: {
+    width: number
+    height: number
+  }
 }>()
 
 const emit = defineEmits<{
   (e: 'page-change', page: number): void
 }>()
 
-// 添加 ref 来存储 PDF 实例
 const pdfRef = ref<any>(null)
 let pdfInstance: PDFDocumentProxy | null = null
+const pdfWidth = ref('1000px')
 
-// 在 PDF 初始化时保存实例
-const handlePdfInit = (pdf: PDFDocumentProxy) => {
+// 处理 PDF 初始化
+const handlePdfInit = async (pdf: PDFDocumentProxy) => {
   pdfInstance = pdf
+  await updatePdfSize()
 }
+
+// 更新 PDF 尺寸
+const updatePdfSize = async () => {
+  if (!pdfInstance || !props.containerSize.height) return
+
+  try {
+    const page = await pdfInstance.getPage(1)
+    const viewport = page.getViewport({ scale: 1.0 })
+    const aspectRatio = viewport.width / viewport.height
+    
+    // 计算基于容器高度的宽度
+    const containerHeight = props.containerSize.height - 40 // 减去一些边距
+    const targetWidth = Math.floor(containerHeight * aspectRatio)
+    
+    pdfWidth.value = `${targetWidth}px`
+  } catch (error) {
+    console.error('更新 PDF 尺寸时出错:', error)
+  }
+}
+
+// 监听容器尺寸变化
+watch(() => props.containerSize, async () => {
+  await updatePdfSize()
+}, { deep: true })
 
 // 组件卸载前进行清理
 onBeforeUnmount(async () => {
-  console.log('onBeforeUnmount---------', pdfInstance)
   if (pdfInstance) {
     try {
-      console.log('清理 PDF 实例')
       await pdfInstance.cleanup()
       await pdfInstance.destroy()
       pdfInstance = null
@@ -66,17 +92,29 @@ const handlePageChange = (page: number) => {
 
 // 监听currentPage的变化
 watch(() => props.currentPage, (newPage) => {
-  if (newPage) {
-    // 强制更新PDF组件的页码
-    const pdfElement = document.querySelector('.pdf-vue3') as any
-    if (pdfElement && pdfElement.__vue__) {
-      pdfElement.__vue__.currentPage = newPage
-    }
+  if (newPage && pdfRef.value) {
+    pdfRef.value.currentPage = newPage
   }
 }, { immediate: true })
 </script>
 
 <style scoped>
+.pdf-container {
+  @apply h-full flex items-center justify-center;
+}
+
+.pdf-container :deep(.pdf-vue3) {
+  @apply h-full flex items-center justify-center;
+}
+
+.pdf-container :deep(.pdf-vue3-page-container) {
+  @apply h-full flex items-center justify-center;
+}
+
+.pdf-container :deep(.pdf-vue3-scroller) {
+  @apply overflow-hidden h-full flex items-center justify-center;
+}
+
 .pdf-container :deep(.pdf-vue3-scroller::-webkit-scrollbar) {
   @apply w-2;
 }

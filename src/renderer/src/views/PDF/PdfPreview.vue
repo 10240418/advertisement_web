@@ -10,13 +10,14 @@
       class="w-[200px] border-r border-gray-200 px-6"
     />
     
-    <div class="flex-1 flex flex-col bg-gray-300">
-      <div class="flex-1 px-8 pb-10 overflow-hidden">
+    <div ref="viewerContainer" class="flex-1 flex flex-col h-full bg-gray-300 relative">
+      <div class="flex-1 px-10 overflow-hidden">
         <PDFViewer 
           :pdf-url="pdfSource" 
           :current-page="currentPage" 
-          class="h-full overflow-y-auto"
+          :container-size="containerSize"
           @page-change="handlePageChange"
+          class="h-full"
         />
       </div>
     </div>
@@ -29,11 +30,14 @@ import PDFViewer from '@renderer/components/PDF/PDFViewer.vue'
 import PDFThumbnails from '@renderer/components/PDF/PDFThumbnails.vue'
 import { useRouter } from 'vue-router'
 import { useFlowStore } from '@renderer/stores/flow_store'
+import { useResizeObserver } from '@vueuse/core'
 
 const router = useRouter()
 const flowStore = useFlowStore()
 const pdfSource = ref('')
 const currentPage = ref(1)
+const viewerContainer = ref<HTMLElement | null>(null)
+const containerSize = ref({ width: 0, height: 0 })
 
 // 初始化PDF源和页码
 onBeforeMount(() => {
@@ -92,5 +96,12 @@ const handleTotalPages = (total: number) => {
 // 判断是否为通知模式
 const isNoticeMode = computed(() => {
   return router.currentRoute.value.query.noticeId !== undefined
+})
+
+// 监听容器大小变化
+useResizeObserver(viewerContainer, (entries) => {
+  const entry = entries[0]
+  const { width, height } = entry.contentRect
+  containerSize.value = { width, height }
 })
 </script>

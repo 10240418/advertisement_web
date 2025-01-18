@@ -265,6 +265,7 @@ const handleArrearageUpdate = async () => {
 
   const response = await api.getArrearage(buildingId);
   arrearageStore.setArrearage(response.data);
+  
   return response;
 };
 
@@ -401,9 +402,7 @@ export const timeTask = async (type: 'arrearage' | 'pdf' | 'ads') => {
         break;
     }
 
-    if (response?.data) {
-      notificationStore.addNotification(`${type}更新成功`, 'success');
-    }
+
   } catch (error) {
     console.error(`${type}資源更新失敗:`, error);
     notificationStore.addNotification(`${type}資源更新失敗，請檢查網絡連接`, 'error');
