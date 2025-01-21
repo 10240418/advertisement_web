@@ -31,7 +31,6 @@
         autoplay
         loop
         playsinline
-        muted
         preload="auto"
         @error="nextAd"
         @ended="handleVideoEnd"
