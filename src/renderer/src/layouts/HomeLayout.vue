@@ -28,7 +28,7 @@ import { useRouter } from 'vue-router';
 import api from '@renderer/apis';
 
 import AdvertisementTop from '@renderer/components/ADTop/AdvertisementTop.vue';
-import CombinedFooter from '@renderer/components/footer/CombinedFooter.vue';
+import CombinedFooter from '@renderer/components/Footer/CombinedFooter.vue';
 import NavBar from '@renderer/components/NavBar/NavBar.vue';
 
 import { useAdsStore } from '@renderer/stores/ads_store';

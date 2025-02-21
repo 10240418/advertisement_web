@@ -5,7 +5,7 @@
 
 <script setup lang="ts">
 import { useScreenController } from './composables/useScreenController'
-import FooterDialog from './components/footer/FooterDIalog.vue'
+import FooterDialog from './components/Footer/FooterDIalog.vue'
 import { useTaskStore } from './stores/task_store'
 import { onMounted } from 'vue'
 
