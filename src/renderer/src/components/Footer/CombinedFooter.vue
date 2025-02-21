@@ -26,8 +26,8 @@
           <div class="flex flex-col justify-center items-center">
             <p class="text-3xl font-semibold text-primary">
               {{
-                weatherData_today?.temperature?.data.find((item) => item.place === '九龙城')?.value
-              }}°
+                weatherData_today?.temperature?.data.find((item) => item.place === '九龍城')?.value
+              }}°C
             </p>
             <p class="text-xs font-medium text-neutral/80">九龍城</p>
           </div>
@@ -38,10 +38,17 @@
           </div>
 
           <div class="flex flex-col justify-center gap-1.5 overflow-auto">
-            <div v-for="(warning, key) in weatherData_warning" :key="key"
+            <div v-if="Object.keys(weatherData_warning || {}).length > 0" 
+              v-for="(warning, key) in weatherData_warning" 
+              :key="key"
               class="px-2 py-1 bg-accent/5 rounded-lg border border-accent/10">
               <p class="text-[10px] font-medium text-accent/90 text-center truncate">
-                {{ warning.name }}
+                {{ warning?.name?.trim() || '無' }}
+              </p>
+            </div>
+            <div v-else class="px-2 py-1 ">
+              <p class="text-[20px] font-medium text-center text-primary truncate">
+                無
               </p>
             </div>
           </div>
@@ -111,6 +118,9 @@
           </div>
         </div>
       </Transition>
+    </div>
+    <div v-if="isLoading" class="absolute top-2 right-2">
+      <div class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent"></div>
     </div>
   </div>
 </template>
@@ -212,6 +222,15 @@ const weatherData_today = ref<WeatherData_today>()
 const weatherData_warning = ref<Record<string, { name: string }>>({})
 let rotationInterval: ReturnType<typeof setInterval> | null = null
 
+// 在 script setup 部分添加新的状态和常量
+const RETRY_DELAY = 30000 // 重试间隔 30 秒
+const UPDATE_INTERVAL = 1800000 // 更新间隔 30 分钟
+const MAX_RETRIES = 3 // 最大重试次数
+
+const isLoading = ref(false)
+const retryCount = ref(0)
+let updateInterval: ReturnType<typeof setInterval> | null = null
+
 // 获取天气图标
 const getWeatherIcon = (icon: number) => {
   const icons: Record<number, string> = {
@@ -231,9 +250,12 @@ const startRotation = () => {
   }, 5000)
 }
 
-// 获取天气数据
-const fetchWeatherData = async () => {
+// 修改获取天气数据的函数
+const fetchWeatherData = async (isRetry = false) => {
+  if (isLoading.value) return
+  
   try {
+    isLoading.value = true
     const [forecastRes, todayRes, warningRes] = await Promise.all([
       axios.get('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=en'),
       axios.get('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc'),
@@ -243,15 +265,35 @@ const fetchWeatherData = async () => {
     weatherData_forecast.value = forecastRes.data
     weatherData_today.value = todayRes.data
     weatherData_warning.value = warningRes.data
+    
+    // 重置重试计数
+    retryCount.value = 0
   } catch (error) {
     console.error('获取天气数据失败:', error)
+    
+    // 重试逻辑
+    if (isRetry && retryCount.value < MAX_RETRIES) {
+      retryCount.value++
+      setTimeout(() => {
+        fetchWeatherData(true)
+      }, RETRY_DELAY)
+    }
+  } finally {
+    isLoading.value = false
   }
 }
 
-// 生命周期钩子
+// 修改生命周期钩子
 onMounted(() => {
-  fetchWeatherData()
+  // 初始获取数据
+  fetchWeatherData(true)
   startRotation()
+
+  // 设置定期更新
+  updateInterval = setInterval(() => {
+    fetchWeatherData(true)
+    console.log('更新天气数据')
+  }, UPDATE_INTERVAL)
 
   // 添加样式
   const style = document.createElement('style')
@@ -266,6 +308,9 @@ onMounted(() => {
 onUnmounted(() => {
   if (rotationInterval) {
     clearInterval(rotationInterval)
+  }
+  if (updateInterval) {
+    clearInterval(updateInterval)
   }
 })
 </script>
