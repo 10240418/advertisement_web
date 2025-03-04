@@ -88,10 +88,10 @@ const handleSecretClick = () => {
 const buttonText = computed(() => {
   const path = router.currentRoute.value.path
   if (path === '/') return '设置'
-  if (path === '/setting') return '返回'
-  if (path === '/buildingDetail') return '返回'
-  if (path === '/arrearage-table') return '返回'
-  return '返回'
+  if (path === '/setting') return '回到首頁'
+  if (path === '/buildingDetail') return '回到首頁'
+  if (path === '/arrearage-table') return '回到首頁'
+  return '回到首頁'
 })
 
 // 获取按钮图标

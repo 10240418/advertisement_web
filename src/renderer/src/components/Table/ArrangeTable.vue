@@ -47,7 +47,7 @@
 
     <!-- 分页控件 -->
     <div v-if="records?.length" class="flex justify-between items-center mt-4 px-6">
-      <button
+      <!-- <button
         @click="handlePrevPage"
         class="px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200"
         :class="currentPage > 1 
@@ -56,12 +56,12 @@
         :disabled="currentPage === 1"
       >
         上一頁
-      </button>
+      </button> -->
       
       <span class="text-sm text-neutral">
         第 {{ currentPage }} 頁，共 {{ totalPages }} 頁
       </span>
-      
+<!--       
       <button
         @click="handleNextPage"
         class="px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200"
@@ -71,7 +71,7 @@
         :disabled="currentPage === totalPages"
       >
         下一頁
-      </button>
+      </button> -->
     </div>
   </div>
 </template>

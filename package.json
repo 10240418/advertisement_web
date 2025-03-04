@@ -38,6 +38,7 @@
     "vue-pdf": "^4.3.0",
     "vue-pdf-embed": "^2.1.0",
     "vue-router": "^4.4.5",
+    "vue-toastification": "^2.0.0-rc.5",
     "vue3-pdf-app": "1.0.3"
   },
   "devDependencies": {
@@ -72,5 +73,6 @@
       "path": "./node_modules/cz-conventional-changelog"
     }
   },
-  "license": "MIT"
+  "license": "MIT",
+  "packageManager": "pnpm@10.4.1+sha512.c753b6c3ad7afa13af388fa6d808035a008e30ea9993f58c6663e2bc5ff21679aa834db094987129aa4d488b86df57f7b634981b2f827cdcacc698cc0cfb88af"
 }
