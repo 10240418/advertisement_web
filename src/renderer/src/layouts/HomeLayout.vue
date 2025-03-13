@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-screen overflow-hidden bg-white">
+  <div class="flex flex-col h-screen w-screen overflow-hidden bg-white">
     <!-- 顶部广告区域 -->
     <div class="w-full aspect-[21/9] shadow-md shrink-0">
       <AdvertisementTop class="w-full h-full" />

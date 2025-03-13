@@ -1,48 +1,27 @@
 <template>
   <div
-    class="w-screen aspect-video bg-gray-100 flex justify-center items-center relative overflow-hidden transition-all duration-300"
+    class="w-full aspect-video bg-gray-100 flex justify-center items-center relative overflow-hidden transition-all duration-300"
     :class="{
-      'fixed top-0 left-0 w-screen h-screen z-[9999] bg-black/75 backdrop-blur-md':
+      'fixed top-0 left-0 w-full h-screen z-[9999] bg-black/75 backdrop-blur-md':
         isFullscreen,
       'h-auto aspect-[21/9]': !isFullscreen, // 改为21:9宽高比
-    }"
-  >
+    }">
     <div v-if="currentAd">
-      <img
-        v-if="currentAd.type === 'image' && isImageVisible"
-        ref="imageElement"
-        :src="currentAd.path ? currentAd.path : currentAd.file.path"
-        :alt="currentAd.title || 'Advertisement Image'"
-        class="block rounded-lg max-h-full object-contain"
-        :class="{
+      <img v-if="currentAd.type === 'image' && isImageVisible" ref="imageElement"
+        :src="currentAd.path ? currentAd.path : currentAd.file.path" :alt="currentAd.title || 'Advertisement Image'"
+        class="block max-h-full object-contain" :class="{
           'w-screen h-screen object-contain drop-shadow-lg': isFullscreen,
-        }"
-        :width="isFullscreen ? '100%' : mediaWidth"
-        @error="nextAd"
-      />
+        }" :width="isFullscreen ? '100%' : mediaWidth" @error="nextAd" />
 
-      <video
-        v-if="currentAd.type === 'video' && isVideoVisible"
-        ref="videoElement"
-        :width="isFullscreen ? '100%' : mediaWidth"
-        :src="currentAd.path ? currentAd.path : currentAd.file.path"
-        class="block rounded-lg aspect-video object-contain"
-        :class="{
+      <video v-if="currentAd.type === 'video' && isVideoVisible" ref="videoElement"
+        :width="isFullscreen ? '100%' : mediaWidth" :src="currentAd.path ? currentAd.path : currentAd.file.path"
+        class="block aspect-video object-contain" :class="{
           'w-screen h-screen object-contain drop-shadow-lg transform-gpu':
             isFullscreen,
           'will-change-transform': isFullscreen,
-        }"
-        autoplay
-        loop
-        playsinline
-        preload="auto"
-        @error="nextAd"
-        @ended="handleVideoEnd"
-      ></video>
+        }" autoplay loop muted playsinline preload="auto" @error="nextAd" @ended="handleVideoEnd"></video>
 
-      <div
-        class="absolute bottom-2.5 right-2.5 bg-black/50 text-white px-2.5 py-1.5 rounded text-sm"
-      >
+      <div class="absolute bottom-2.5 right-2.5 bg-black/50 text-white px-2.5 py-1.5 rounded text-sm">
         {{ remainingTime }}秒
       </div>
     </div>
