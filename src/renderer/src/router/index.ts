@@ -9,20 +9,10 @@ const routes: Array<RouteRecordRaw> = [
     component: HomeLayout,
     children: [
       { path: '', component: () => import('../views/menu/HomeMenu.vue') },
-      { path: 'fees', component: () => import('../views/notice/UrgentNotice.vue') },
-      { path: 'lost-found', component: () => import('../views/notice/GeneralNotice.vue') },
-      { path: 'activities', component: () => import('../views/notice/CorporateNotice.vue') },
-      { path: 'urgentNotice', component: () => import('../views/notice/UrgentNotice.vue') },
-      { path: 'generalNotice', component: () => import('../views/notice/GeneralNotice.vue') },
-      { path: 'corporateNotice', component: () => import('../views/notice/CorporateNotice.vue') },
-      { path: 'governmentNotice', component: () => import('../views/notice/GovernmentNotice.vue') },
-      { path: 'allNotice', component: () => import('../views/notice/AllNotice.vue') },
       { path: 'setting', component: () => import('../views/setting/BuildingDetail.vue') },
       { path: '/arrearage-find', name: 'ArrearageFind', component: ArrearageFind },
       { path: '/arrearage-table', name: 'ArrearageTable', component: ArrearageTable },
       { path: '/pdfPreview', name: 'PdfPreview', component: () => import('../views/pdf/PdfPreview.vue') }
-      
-    
     ]
   }
 ]
