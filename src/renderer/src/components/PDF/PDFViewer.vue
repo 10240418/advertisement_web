@@ -59,7 +59,7 @@ const updatePdfSize = async () => {
     const aspectRatio = viewport.width / viewport.height
     
     // 计算基于容器高度的宽度
-    const containerHeight = props.containerSize.height - 40 // 减去一些边距
+    const containerHeight = props.containerSize.height*1.010362  
     const targetWidth = Math.floor(containerHeight * aspectRatio)
     
     pdfWidth.value = `${targetWidth}px`
