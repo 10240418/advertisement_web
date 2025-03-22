@@ -1,72 +1,9 @@
 <template>
   <div class="flex h-full w-full relative bg-[#ffffff] px-4">
     <div class="w-full">
-      <!-- 信息卡片 -->
-      <div class="bg-white rounded-xl border border-grey p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)] mb-6">
-        <div class="flex items-center justify-between">
-          <!-- 标题部分 -->
-          <div class="flex flex-col">
-            <span class="text-2xl font-bold text-primary tracking-wider mb-1">欠費查詢</span>
-            <span class="text-sm font-medium text-neutral tracking-widest uppercase">Payment Query</span>
-          </div>
-          
-          <!-- 信息部分 -->
-          <div v-if="arrearageStore.hasData" class="flex items-center gap-8">
-            <!-- 楼号信息 -->
-            <div class="flex flex-col border-r border-gray-200 pr-8">
-              <span class="text-sm text-neutral mb-1">樓號</span>
-              <span class="text-xl font-medium text-primary">{{ selectedBuilding }}樓</span>
-            </div>
-            
-            <!-- 户号信息 -->
-            <div class="flex flex-col">
-              <span class="text-sm text-neutral mb-1">單位</span>
-              <span class="text-xl font-medium text-primary">{{ selectedFloor }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 欠费记录表格 -->
       <template v-if="arrearageStore.hasData">
+        <!-- 1. 选择器容器 -->
         <div class="bg-white rounded-xl border border-grey p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] mb-6">
-          <div class="flex justify-between items-center mt-6">
-            <!-- 上一页按钮 -->
-            <button
-              @click="handlePrevRecordPage"
-              class="px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200 min-w-[100px]"
-              :class="recordPage > 1 ? 'bg-primary text-white hover:bg-primary/90' : 'bg-gray-100 text-gray-400 cursor-not-allowed'"
-              :disabled="recordPage === 1"
-            >
-              上一頁
-            </button>
-
-            <!-- 记录展示区域 -->
-            <div class="grid grid-cols-4 gap-4 text-center flex-1 mx-6">
-              <template v-for="item in paginatedRecords" :key="item.key">
-                <div class="flex flex-col p-3 bg-white rounded-xl border border-grey shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-                  <span class="text-sm text-neutral mb-2">{{ item.key }}</span>
-                  <span class="font-medium" :class="getStatusClass(item.value)">
-                    {{ item.value }}
-                  </span>
-                </div>
-              </template>
-            </div>
-
-            <!-- 下一页按钮 -->
-            <button
-              @click="handleNextRecordPage"
-              class="px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200 min-w-[100px]"
-              :class="recordPage < totalRecordPages ? 'bg-primary text-white hover:bg-primary/90' : 'bg-gray-100 text-gray-400 cursor-not-allowed'"
-              :disabled="recordPage === totalRecordPages"
-            >
-              下一頁
-            </button>
-          </div>
-        </div>
-
-        <!-- 选择器容器 -->
-        <div class="bg-white rounded-xl border border-grey p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
           <!-- 楼号选择器 -->
           <div class="relative flex items-center justify-between mb-4">
             <!-- 上一页按钮 -->
@@ -155,6 +92,54 @@
             </button>
           </div>
         </div>
+
+        <!-- 2. 查询按钮 -->
+        <div class="flex justify-center mb-6">
+          <button
+            @click="handleQuery"
+            class="px-10 py-3 bg-primary text-white font-medium rounded-lg shadow-md hover:bg-primary/90 transition-colors duration-200 text-lg"
+            :disabled="!selectedBuilding || !selectedFloor"
+          >
+            查詢繳費記錄
+          </button>
+        </div>
+
+        <!-- 3. 信息部分 (查询结果) -->
+        <div class="bg-white rounded-xl border border-grey p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)]" v-if="showResults">
+          <div class="flex justify-between items-center mt-6">
+            <!-- 上一页按钮 -->
+            <button
+              @click="handlePrevRecordPage"
+              class="px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200 min-w-[100px]"
+              :class="recordPage > 1 ? 'bg-primary text-white hover:bg-primary/90' : 'bg-gray-100 text-gray-400 cursor-not-allowed'"
+              :disabled="recordPage === 1"
+            >
+              上一頁
+            </button>
+
+            <!-- 记录展示区域 -->
+            <div class="grid grid-cols-4 gap-4 text-center flex-1 mx-6">
+              <template v-for="item in paginatedRecords" :key="item.key">
+                <div class="flex flex-col p-3 bg-white rounded-xl border border-grey shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                  <span class="text-sm text-neutral mb-2">{{ item.key }}</span>
+                  <span class="font-medium" :class="getStatusClass(item.value)">
+                    {{ item.value }}
+                  </span>
+                </div>
+              </template>
+            </div>
+
+            <!-- 下一页按钮 -->
+            <button
+              @click="handleNextRecordPage"
+              class="px-6 py-2 rounded-lg text-sm font-medium transition-colors duration-200 min-w-[100px]"
+              :class="recordPage < totalRecordPages ? 'bg-primary text-white hover:bg-primary/90' : 'bg-gray-100 text-gray-400 cursor-not-allowed'"
+              :disabled="recordPage === totalRecordPages"
+            >
+              下一頁
+            </button>
+          </div>
+        </div>
       </template>
 
       <!-- 无数据显示 -->
@@ -177,6 +162,7 @@ const recordPage = ref(1);
 const buildingPage = ref(1);
 const floorPage = ref(1);
 const itemsPerPage = 6;
+const showResults = ref(false); // 控制是否显示查询结果
 
 // 获取数据
 const buildings = computed(() => arrearageStore.getBuildings);
@@ -220,6 +206,17 @@ const paginatedRecords = computed(() => {
   return records.value.slice(start, end);
 });
 
+// 查询处理方法
+const handleQuery = () => {
+  if (selectedBuilding.value && selectedFloor.value) {
+    // 直接使用当前选择的楼号和户号来获取数据
+    // 不需要调用fetchArrearage，因为setSelectedBuilding和setSelectedFloor已经设置了查询参数
+    // store会通过getCurrentArrearage getter自动获取对应的欠费数据
+    recordPage.value = 1;
+    showResults.value = true;
+  }
+};
+
 // 分页控制方法
 const handlePrevRecordPage = () => {
   if (recordPage.value > 1) recordPage.value--;
@@ -245,16 +242,16 @@ const handleNextFloorPage = () => {
   if (floorPage.value < totalFloorPages.value) floorPage.value++;
 };
 
-// 选择处理方法
+// 选择处理方法 - 现在只更新选择状态，不触发查询
 const handleBuildingSelect = (building: string) => {
-  recordPage.value = 1;
   floorPage.value = 1;
   arrearageStore.setSelectedBuilding(building);
+  showResults.value = false; // 重置查询结果显示
 };
 
 const handleFloorSelect = (floor: string) => {
-  recordPage.value = 1;
   arrearageStore.setSelectedFloor(floor);
+  showResults.value = false; // 重置查询结果显示
 };
 
 const getStatusClass = (status: string | number) => {

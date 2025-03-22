@@ -188,15 +188,26 @@ import { usePageStore, type NoticePageType } from "@renderer/stores/page_store";
 import type { Notice } from "@renderer/apis";
 
 // 定义带有格式化日期的通知类型
-interface NoticeWithFormattedDate extends Notice {
+interface NoticeWithFormattedDate extends Omit<Notice, 'description' | 'file'> {
   formattedDate: string;
   // 为了兼容 NoticePage.vue 的字段
   created_at?: string;
-  description?: string;
+  description: string; // 确保与Notice接口一致
   file?: {
+    id: number;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt: null | string;
+    size: number;
+    md5: string;
     path: string;
+    mimeType: string;
+    oss: 'local' | 'aws' | string;
+    uploader: string;
+    uploaderId: number;
+    uploaderType: string;
   };
-  type: string;
+  type: 'urgent' | 'building' | 'government' | 'normal';
 }
 
 const router = useRouter();

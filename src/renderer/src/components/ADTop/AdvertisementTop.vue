@@ -19,7 +19,7 @@
           'w-screen h-screen object-contain drop-shadow-lg transform-gpu':
             isFullscreen,
           'will-change-transform': isFullscreen,
-        }" autoplay loop muted playsinline preload="auto" @error="nextAd" @ended="handleVideoEnd"></video>
+        }" autoplay loop playsinline preload="auto" @error="nextAd" @ended="handleVideoEnd"></video>
 
       <div class="absolute bottom-2.5 right-2.5 bg-black/50 text-white px-2.5 py-1.5 rounded text-sm">
         {{ remainingTime }}秒
