@@ -340,35 +340,35 @@ const handleAdsUpdate = async () => {
   return adsResponse;
 };
 
-// 添加新的监控函数
-const monitorDownloads = () => {
-  const adsStore = useAdsStore();
-  const noticeStore = useNoticeStore();
+// // 添加新的监控函数
+// const monitorDownloads = () => {
+//   const adsStore = useAdsStore();
+//   const noticeStore = useNoticeStore();
   
-  setInterval(() => {
-    console.log('=== 下載資源監控 ===');
-    console.log('已下載廣告:', {
-      總數: adsStore.getDownloadedAds.length,
-      詳細: adsStore.getDownloadedAds.map(ad => ({
-        id: ad.advertisement.id,
-        標題: ad.advertisement.title,
-        類型: ad.advertisement.type,
-        路徑: ad.downloadPath
-      }))
-    });
+//   setInterval(() => {
+//     console.log('=== 下載資源監控 ===');
+//     console.log('已下載廣告:', {
+//       總數: adsStore.getDownloadedAds.length,
+//       詳細: adsStore.getDownloadedAds.map(ad => ({
+//         id: ad.advertisement.id,
+//         標題: ad.advertisement.title,
+//         類型: ad.advertisement.type,
+//         路徑: ad.downloadPath
+//       }))
+//     });
     
-    console.log('已下載通知:', {
-      總數: noticeStore.downloadedNotices.length,
-      詳細: noticeStore.downloadedNotices.map(notice => ({
-        id: notice.notice.id,
-        標題: notice.notice.title,
-        類型: notice.notice.type,
-        路徑: notice.downloadPath
-      }))
-    });
-    console.log('==================\n');
-  }, 1000);
-};
+//     console.log('已下載通知:', {
+//       總數: noticeStore.downloadedNotices.length,
+//       詳細: noticeStore.downloadedNotices.map(notice => ({
+//         id: notice.notice.id,
+//         標題: notice.notice.title,
+//         類型: notice.notice.type,
+//         路徑: notice.downloadPath
+//       }))
+//     });
+//     console.log('==================\n');
+//   }, 1000);
+// };
 
 /**
  * 定时任务主函数

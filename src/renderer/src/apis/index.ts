@@ -80,6 +80,7 @@ interface Advertisement {
   fileId: number
   file: FileInfo
   isPublic: boolean
+  endTime:string
 }
 
 interface Notice {
@@ -94,6 +95,7 @@ interface Notice {
   fileId: number | null
   file: FileInfo
   fileType: string
+  endTime:string
 }
 
 interface ApiResponse<T> {
@@ -140,6 +142,16 @@ const api = {
         }
       }
     )
+    
+    // 过滤掉已过期的广告
+    if (response.data && response.data.data) {
+      const currentTime = new Date().getTime();
+      response.data.data = response.data.data.filter(ad => {
+        const endTime = new Date(ad.endTime).getTime();
+        return endTime > currentTime;
+      });
+    }
+    
     return response.data
   },
 
@@ -161,6 +173,16 @@ const api = {
         }
       }
     )
+    
+    // 过滤掉已过期的通知
+    if (response.data && response.data.data) {
+      const currentTime = new Date().getTime();
+      response.data.data = response.data.data.filter(notice => {
+        const endTime = new Date(notice.endTime).getTime();
+        return endTime > currentTime;
+      });
+    }
+    
     return response.data
   },
 

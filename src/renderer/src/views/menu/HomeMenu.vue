@@ -270,7 +270,8 @@ const loadNotices = () => {
       isPublic: notice.isPublic,
       fileId: notice.fileId,
       fileType: notice.fileType,
-      formattedDate: formatDate(notice.createdAt)
+      formattedDate: formatDate(notice.createdAt),
+      endTime:notice.endTime
     });
   });
 
