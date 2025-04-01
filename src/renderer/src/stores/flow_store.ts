@@ -116,7 +116,10 @@ export const useFlowStore = defineStore('flow', () => {
       ad.display === 'top' || ad.display === 'topfull'
     )
   )
-
+  // // 设计个定时器
+  // setInterval(()=>{
+  //   console.log(adsStore.getActiveAds,fullscreenAds,'测试')
+  // },1000)
   // === 错误处理函数 ===
   const handleError = ({ message, retry, fallback }: ErrorHandler) => {
     console.error(message)
@@ -225,13 +228,30 @@ export const useFlowStore = defineStore('flow', () => {
   const startScreenSequence = () => {
     console.log('[Flow] 开始屏幕序列')
     clearTimer('state')
-    
+    console.log('----------------全屏广告测试',fullscreenAds.value,fullscreenAds.value.length)
     // 检查是否有全屏广告可播放
     if (fullscreenAds.value.length > 0) {
       startNewCycle()
     } else {
-      // 如果没有全屏广告，直接进入欠费表
+      // 如果没有全屏广告，直接进入欠费表，但仍然继续循环
       transitionTo('arrearage-table')
+      
+      // 设置欠费表->通知计时器
+      console.log('[Flow] 设置欠费表->通知计时器:', timeoutConfig.display, 'ms')
+      timers.state = setTimeout(() => {
+        if (!isUserActive.value) {
+          console.log('[Flow] 切换到通知轮播')
+          transitionTo('notice')
+          
+          // 在通知显示完成后重新开始循环
+          timers.state = setTimeout(() => {
+            if (!isUserActive.value) {
+              console.log('[Flow] 通知显示完成，重新开始循环')
+              startScreenSequence()
+            }
+          }, timeoutConfig.notice)
+        }
+      }, timeoutConfig.display)
     }
   }
 
@@ -246,30 +266,46 @@ export const useFlowStore = defineStore('flow', () => {
     lastSuccessfulState.value = null
     
     clearAllTimers()
-    transitionTo('fullscreen-ad')
+    
+    // 检查是否有全屏广告，如果没有则直接进入欠费表
+    if (fullscreenAds.value.length > 0) {
+      transitionTo('fullscreen-ad')
 
-    // console.log('[Flow] 设置广告->欠费表计时器:', timeoutConfig.display, 'ms')
-    timers.state = setTimeout(() => {
-      if (!isUserActive.value) {
-        // console.log('[Flow] 切换到欠费表')
-        transitionTo('arrearage-table')
+      console.log('[Flow] 设置广告->欠费表计时器:', timeoutConfig.display, 'ms')
+      timers.state = setTimeout(() => {
+        if (!isUserActive.value) {
+          // console.log('[Flow] 切换到欠费表')
+          transitionTo('arrearage-table')
 
-        // console.log('[Flow] 设置欠费表->通知计时器:', timeoutConfig.display, 'ms')
-        timers.state = setTimeout(() => {
-          if (!isUserActive.value) {
-            // console.log('[Flow] 切换到通知轮播')
-            transitionTo('notice')
-          }
-        }, timeoutConfig.display)
-      }
-    }, timeoutConfig.display)
+          console.log('[Flow] 设置欠费表->通知计时器:', timeoutConfig.display, 'ms')
+          timers.state = setTimeout(() => {
+            if (!isUserActive.value) {
+              console.log('[Flow] 切换到通知轮播')
+              transitionTo('notice')
+            }
+          }, timeoutConfig.display)
+        }
+      }, timeoutConfig.display)
+    } else {
+      // 没有广告，直接进入欠费表
+      console.log('[Flow] 没有广告，直接进入欠费表')
+      transitionTo('arrearage-table')
+
+      console.log('[Flow] 设置欠费表->通知计时器:', timeoutConfig.display, 'ms')
+      timers.state = setTimeout(() => {
+        if (!isUserActive.value) {
+          console.log('[Flow] 切换到通知轮播')
+          transitionTo('notice')
+        }
+      }, timeoutConfig.display)
+    }
   }
 
   // === 通知轮播控制 ===
   const startNoticeRotation = () => {
     // console.log('[Flow] 尝试开始通知轮播')
     // console.log('[Flow] 活跃通知列表:', activeNotices.value)
-    
+    // console.log('----------------Notice测试',activeNotices.value,activeNotices.value.length)
     if (!activeNotices.value || activeNotices.value.length === 0) {
       // console.log('[Flow] 没有可显示的通知，返回菜单')
       transitionTo('menu')
@@ -385,7 +421,7 @@ export const useFlowStore = defineStore('flow', () => {
         currentNoticeIndex.value = 0
         isNoticeRotating.value = false
         clearAllTimers()
-        startNewCycle()
+        startScreenSequence()
       } else {
         rotateNotice()
       }
