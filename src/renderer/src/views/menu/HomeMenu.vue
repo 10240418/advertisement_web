@@ -348,7 +348,7 @@ const handleMenuClick = (route: string) => {
   }
 
   ElMessage({
-    message: "該功能正在開發中，敬請期待",
+    message: "大廈尚未開放本功能",
     type: "info",
     duration: 2000,
     center: true,

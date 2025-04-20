@@ -29,7 +29,7 @@
                 weatherData_today?.temperature?.data.find((item) => item.place === '九龍城')?.value
               }}°C
             </p>
-            <p class="text-xs font-medium text-neutral/80">九龍城</p>
+            <p class="text-xs font-medium text-neutral/80">{{ getBuildingName() }}</p>
           </div>
 
           <div class="flex justify-center items-center">
@@ -128,6 +128,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
+import { useBuildingStore } from '@renderer/stores/building_store'
 import img50 from '@renderer/assets/weatherIcons/pic50.png'
 import img51 from '@renderer/assets/weatherIcons/pic51.png'
 import img52 from '@renderer/assets/weatherIcons/pic52.png'
@@ -221,6 +222,7 @@ const weatherData_forecast = ref<WeatherData_forecast>()
 const weatherData_today = ref<WeatherData_today>()
 const weatherData_warning = ref<Record<string, { name: string }>>({})
 let rotationInterval: ReturnType<typeof setInterval> | null = null
+const buildingStore = useBuildingStore()
 
 // 在 script setup 部分添加新的状态和常量
 const RETRY_DELAY = 30000 // 重试间隔 30 秒
@@ -248,6 +250,11 @@ const startRotation = () => {
   rotationInterval = setInterval(() => {
     showWeather.value = !showWeather.value
   }, 5000)
+}
+
+// 获取大厦名称
+const getBuildingName = () => {
+  return buildingStore.getBuildingName || '大廈'
 }
 
 // 修改获取天气数据的函数
