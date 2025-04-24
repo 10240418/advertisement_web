@@ -287,7 +287,7 @@ const handlePDFUpdate = async () => {
       screenState: flowStore.currentScreenState
     };
     
-    // 更新通知数据
+    // 更新通知数据并清理过期文件
     const noticesResponse = await api.getNotices();
     if (!noticesResponse.data || noticesResponse.data.length === 0) {
       console.log('[PDF更新] 没有获取到新的通知数据');
@@ -296,9 +296,9 @@ const handlePDFUpdate = async () => {
     
     console.log(`[PDF更新] 成功获取 ${noticesResponse.data.length} 条通知`);
     
-    // 智能合并通知数据
+    // 智能合并通知数据并清理磁盘上过期文件
     const oldNotices = noticeStore.notices;
-    noticeStore.setNotices(noticesResponse.data);
+    await noticeStore.setNotices(noticesResponse.data);
     
     // 如果正在轮播，尝试保持当前位置
     if (flowStore.isNoticeRotating) {
@@ -330,9 +330,9 @@ const handlePDFUpdate = async () => {
 const handleAdsUpdate = async () => {
   const adsStore = useAdsStore();
   
-  // 1. 更新广告数据（setAds 方法现在会自动清理旧的已下载数据）
+  // 1. 更新广告数据（setAds 方法现在会自动清理旧的已下载数据，包括磁盘文件）
   const adsResponse = await api.getAdvertisements();
-  adsStore.setAds(adsResponse.data);
+  await adsStore.setAds(adsResponse.data);
   
   // 2. 下载新的广告资源
   await downloadAllAds();
@@ -340,51 +340,12 @@ const handleAdsUpdate = async () => {
   return adsResponse;
 };
 
-// // 添加新的监控函数
-// const monitorDownloads = () => {
-//   const adsStore = useAdsStore();
-//   const noticeStore = useNoticeStore();
-  
-//   setInterval(() => {
-//     console.log('=== 下載資源監控 ===');
-//     console.log('已下載廣告:', {
-//       總數: adsStore.getDownloadedAds.length,
-//       詳細: adsStore.getDownloadedAds.map(ad => ({
-//         id: ad.advertisement.id,
-//         標題: ad.advertisement.title,
-//         類型: ad.advertisement.type,
-//         路徑: ad.downloadPath
-//       }))
-//     });
-    
-//     console.log('已下載通知:', {
-//       總數: noticeStore.downloadedNotices.length,
-//       詳細: noticeStore.downloadedNotices.map(notice => ({
-//         id: notice.notice.id,
-//         標題: notice.notice.title,
-//         類型: notice.notice.type,
-//         路徑: notice.downloadPath
-//       }))
-//     });
-//     console.log('==================\n');
-//   }, 1000);
-// };
-
 /**
  * 定时任务主函数
  * @param type - 任务类型：'arrearage' | 'pdf' | 'ads'
  */
 export const timeTask = async (type: 'arrearage' | 'pdf' | 'ads') => {
-  // 启动监控（只在第一次调用时启动）
-  // if (!window.__monitorStarted) {
-  //   monitorDownloads();
-  //   window.__monitorStarted = true;
-  // }
-
   const notificationStore = useNotificationStore();
-
-  // 验证登录状态
-
 
   try {
     let response;
@@ -402,17 +363,9 @@ export const timeTask = async (type: 'arrearage' | 'pdf' | 'ads') => {
         break;
     }
 
-
   } catch (error) {
     console.error(`${type}資源更新失敗:`, error);
     notificationStore.addNotification(`${type}資源更新失敗，請檢查網絡連接`, 'error');
     throw error;
   }
 };
-
-// 添加类型声明以避免 TypeScript 错误
-declare global {
-  interface Window {
-    __monitorStarted?: boolean;
-  }
-}

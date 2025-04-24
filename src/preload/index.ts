@@ -17,6 +17,9 @@ const api = {
   downloadImage: (PathName: string, url: string, filename: string) => {
     return ipcRenderer.invoke('download-image', { PathName, url, filename })
   },
+  deleteFile: (filePath: string) => {
+    return ipcRenderer.invoke('delete-file', filePath)
+  },
   getWindowSize: () => ipcRenderer.invoke('get-window-size'),
   onWindowResize: (callback) => {
     ipcRenderer.on('window-resize', (_event, size) => {

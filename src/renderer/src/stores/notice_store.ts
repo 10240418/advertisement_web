@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 
 import type { Notice } from '@renderer/apis';
+import { useNotificationStore } from './noticefication_store';
 
 interface DownloadedNotice {
   notice: Notice;
@@ -51,12 +52,32 @@ export const useNoticeStore = defineStore('notice', {
       this.cleanupDownloadedNotices();
     },
 
-    // 添加新的清理方法
-    cleanupDownloadedNotices() {
+    // 添加新的清理方法，并删除磁盘上的过期文件
+    async cleanupDownloadedNotices() {
       const newNoticeIds = new Set(this.notices.map(notice => notice.id));
+      const expiredNotices = this.downloadedNotices.filter(
+        downloadedNotice => !newNoticeIds.has(downloadedNotice.notice.id)
+      );
+      
+      // 从存储中移除过期通知
       this.downloadedNotices = this.downloadedNotices.filter(
         downloadedNotice => newNoticeIds.has(downloadedNotice.notice.id)
       );
+      
+      // 删除磁盘上的过期文件
+      for (const expiredNotice of expiredNotices) {
+        try {
+          console.log(`[通知清理] 正在删除过期通知文件: ${expiredNotice.downloadPath}`);
+          // 使用类型断言，确保TypeScript不会报错
+          await (window.api as any).deleteFile(expiredNotice.downloadPath);
+        } catch (error) {
+          console.error(`[通知清理] 删除文件失败:`, error);
+        }
+      }
+      
+      if (expiredNotices.length > 0) {
+        console.log(`[通知清理] 已清理 ${expiredNotices.length} 个过期通知文件`);
+      }
     },
 
     // 添加已下载的通知

@@ -208,6 +208,32 @@ const sanitizeFilename = (filename: string): string => {
   return filename.replace(/[^a-zA-Z0-9_\-.]/g, "_");
 };
 
+// 添加删除文件的IPC处理函数
+ipcMain.handle("delete-file", async (_event, filePath) => {
+  try {
+    // 验证文件路径，确保安全
+    if (!filePath || typeof filePath !== 'string') {
+      return { success: false, error: "无效的文件路径" };
+    }
+
+    // 检查文件是否存在
+    try {
+      await fs.promises.access(filePath);
+    } catch (error) {
+      console.log(`[文件删除] 文件不存在: ${filePath}`);
+      return { success: true, message: "文件不存在" };
+    }
+
+    // 删除文件
+    await fs.promises.unlink(filePath);
+    console.log(`[文件删除] 成功删除文件: ${filePath}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error(`[文件删除] 删除失败 "${filePath}":`, error);
+    return { success: false, error: error.message };
+  }
+});
+
 // 处理图片下载请求
 ipcMain.handle(
   "download-image",

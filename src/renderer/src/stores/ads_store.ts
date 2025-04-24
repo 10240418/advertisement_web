@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 
 import type { Advertisement } from '@renderer/apis';
+import { useNotificationStore } from './noticefication_store';
 
 interface DownloadedAd {
   advertisement: Advertisement;
@@ -46,12 +47,32 @@ export const useAdsStore = defineStore('ads', {
       this.cleanupDownloadedAds();
     },
 
-    // 添加新的清理方法
-    cleanupDownloadedAds() {
+    // 添加新的清理方法，并删除磁盘上的过期文件
+    async cleanupDownloadedAds() {
       const newAdIds = new Set(this.advertisements.map(ad => ad.id));
+      const expiredAds = this.downloadedAds.filter(
+        downloadedAd => !newAdIds.has(downloadedAd.advertisement.id)
+      );
+      
+      // 从存储中移除过期广告
       this.downloadedAds = this.downloadedAds.filter(
         downloadedAd => newAdIds.has(downloadedAd.advertisement.id)
       );
+      
+      // 删除磁盘上的过期文件
+      for (const expiredAd of expiredAds) {
+        try {
+          console.log(`[广告清理] 正在删除过期广告文件: ${expiredAd.downloadPath}`);
+          // 使用类型断言，确保TypeScript不会报错
+          await (window.api as any).deleteFile(expiredAd.downloadPath);
+        } catch (error) {
+          console.error(`[广告清理] 删除文件失败:`, error);
+        }
+      }
+      
+      if (expiredAds.length > 0) {
+        console.log(`[广告清理] 已清理 ${expiredAds.length} 个过期广告文件`);
+      }
     },
 
     // 添加已下载的广告
