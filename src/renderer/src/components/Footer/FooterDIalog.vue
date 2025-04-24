@@ -16,17 +16,7 @@ const notificationStore = useNotificationStore();
 // 存储上一次的通知列表长度，用于检测新通知
 const prevNotificationsLength = ref(0);
 
-// 测试通知函数
-const testNotification = () => {
-  toast.success("这是一个测试成功通知", toastOptions);
-  console.log("测试通知已触发");
-};
 
-// 测试系统通知（通过store）
-const testSystemNotification = () => {
-  notificationStore.addNotification("这是通过store添加的系统通知", "info");
-  console.log("系统通知已添加到store");
-};
 
 // 存储计时器ID - 修改类型为NodeJS.Timeout|null
 let checkNotificationsInterval: ReturnType<typeof setInterval> | null = null;

@@ -93,12 +93,16 @@
             <div class="h-full flex items-center gap-4">
               <div class="flex-shrink-0">
                 <div class="w-32 h-32 bg-neutral/5 rounded-lg flex items-center justify-center">
-                  <img src="@renderer/assets/qr-app.png" alt="" class="w-28 h-28 object-contain" />
+                  <img 
+                    :src="`https://api.qrserver.com/v1/create-qr-code/?size=112x112&data=https://ismart.legend-in.com.hk/blg_cs_public/${buildingStore.getIsmartId}`" 
+                    alt="意見投訴二維碼" 
+                    class="w-28 h-28 object-contain" 
+                  />
                 </div>
               </div>
               <div class="flex-1">
-                <p class="text-sm font-medium text-primary mb-1">移動應用</p>
-                <p class="text-xs text-neutral/70">掃QRCode下載APP</p>
+                <p class="text-sm font-medium text-primary mb-1">意見投訴</p>
+                <p class="text-xs text-neutral/70">掃QRCode提交意見投訴</p>
               </div>
             </div>
           </div>
@@ -107,12 +111,16 @@
             <div class="h-full flex items-center gap-4">
               <div class="flex-shrink-0">
                 <div class="w-32 h-32 bg-neutral/5 rounded-lg flex items-center justify-center">
-                  <img src="@renderer/assets/qr-wechat.png" alt="微信公众号二维码" class="w-28 h-28 object-contain" />
+                  <img 
+                    :src="`https://api.qrserver.com/v1/create-qr-code/?size=112x112&data=https://ismart.legend-in.com.hk/regform/${buildingStore.getIsmartId}`"
+                    alt="住戶登記二維碼" 
+                    class="w-28 h-28 object-contain" 
+                  />
                 </div>
               </div>
               <div class="flex-1">
-                <p class="text-sm font-medium text-primary mb-1">微信公眾號</p>
-                <p class="text-xs text-neutral/70">掃QRCode追蹤最新訊息</p>
+                <p class="text-sm font-medium text-primary mb-1">住戶登記</p>
+                <p class="text-xs text-neutral/70">掃QRCode進行住戶登記</p>
               </div>
             </div>
           </div>
