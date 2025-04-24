@@ -9,6 +9,7 @@ interface Building {
   name: string;
   ismartId: string;
   remark: string;
+  location: string;
   devices: null | any[];
   notices: null | any[];
   advertisements: null | any[];
@@ -51,6 +52,9 @@ export const useBuildingStore = defineStore('building', {
     // 获取建筑名称
     getBuildingName: (state): string => state.building?.name ?? '',
     
+    // 获取location
+    getLocation: (state): string => state.building?.location ?? '',
+    
     // 获取ismartId
     getIsmartId: (state): string => state.building?.ismartId ?? '',
     
@@ -68,7 +72,10 @@ export const useBuildingStore = defineStore('building', {
     // 设置建筑信息
     setBuilding(loginResponse: any) {
       try {
-        this.building = loginResponse.building;
+        this.building = {
+          ...loginResponse.building,
+          location: loginResponse.building?.location || ''
+        };
         this.deviceId = loginResponse.deviceId;
         this.settings = loginResponse.settings;
         this.isAuthenticated = true;

@@ -25,11 +25,9 @@
 
           <div class="flex flex-col justify-center items-center">
             <p class="text-3xl font-semibold text-primary">
-              {{
-                weatherData_today?.temperature?.data.find((item) => item.place === '九龍城')?.value
-              }}°C
+              {{ currentLocationTemperature ?? '--' }}°C
             </p>
-            <p class="text-xs font-medium text-neutral/80">{{ getBuildingName() }}</p>
+            <p class="text-xs font-medium text-neutral/80">{{ buildingStore.getLocation || '未知地點' }}</p>
           </div>
 
           <div class="flex justify-center items-center">
@@ -134,7 +132,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import axios from 'axios'
 import { useBuildingStore } from '@renderer/stores/building_store'
 import img50 from '@renderer/assets/weatherIcons/pic50.png'
@@ -241,6 +239,18 @@ const isLoading = ref(false)
 const retryCount = ref(0)
 let updateInterval: ReturnType<typeof setInterval> | null = null
 
+// 新增计算属性以获取当前地点的温度
+const currentLocationTemperature = computed(() => {
+  const location = buildingStore.getLocation
+  if (!location || !weatherData_today.value?.temperature?.data) {
+    return null
+  }
+  const tempData = weatherData_today.value.temperature.data.find(
+    (item) => item.place === location
+  )
+  return tempData?.value
+})
+
 // 获取天气图标
 const getWeatherIcon = (icon: number) => {
   const icons: Record<number, string> = {
@@ -258,11 +268,6 @@ const startRotation = () => {
   rotationInterval = setInterval(() => {
     showWeather.value = !showWeather.value
   }, 5000)
-}
-
-// 获取大厦名称
-const getBuildingName = () => {
-  return buildingStore.getBuildingName || '大廈'
 }
 
 // 修改获取天气数据的函数
