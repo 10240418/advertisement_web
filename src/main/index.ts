@@ -30,7 +30,7 @@ function createWindow(): void {
   // 创建浏览器窗口实例
   const mainWindow = new BrowserWindow({
     width: 1024,
-    height: 2048,
+    height: 768, // 修改为更合理的默认窗口高度
     show: false,
     // frame: false,   // 移除窗口边框和标题栏
     resizable: true, // 允许调整窗口大小
@@ -46,8 +46,8 @@ function createWindow(): void {
   // 当窗口准备好时显示
   mainWindow.on("ready-to-show", () => {
     mainWindow.show();
-    // 设置全屏
-    mainWindow.setFullScreen(true)
+    // 移除全屏设置
+    // mainWindow.setFullScreen(true)
   });
 
   // 处理新窗口打开请求，在默认浏览器中打开链接
@@ -212,7 +212,7 @@ const sanitizeFilename = (filename: string): string => {
 ipcMain.handle("delete-file", async (_event, filePath) => {
   try {
     // 验证文件路径，确保安全
-    if (!filePath || typeof filePath !== 'string') {
+    if (!filePath || typeof filePath !== "string") {
       return { success: false, error: "无效的文件路径" };
     }
 
