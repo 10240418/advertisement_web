@@ -1,68 +1,36 @@
 <template>
   <div
-    class="w-full bg-gray-100 flex justify-center items-center relative overflow-hidden transition-all duration-300"
+    class="w-full aspect-video bg-gray-100 flex justify-center items-center relative overflow-hidden transition-all duration-300"
     :class="{
       'fixed top-0 left-0 w-full h-screen z-[9999] bg-black/75 backdrop-blur-md':
         isFullscreen,
-      'h-auto': !isFullscreen,
-      [aspectRatio]: !isFullscreen, // 使用动态的宽高比
-    }"
-  >
+      'h-auto aspect-[21/9]': !isFullscreen, // 改为21:9宽高比
+    }">
     <div v-if="currentAd">
-      <img
-        v-if="currentAd.type === 'image' && isImageVisible"
-        ref="imageElement"
-        :src="currentAd.path ? currentAd.path : currentAd.file.path"
-        :alt="currentAd.title || 'Advertisement Image'"
-        class="block max-h-full object-contain"
-        :class="{
+      <img v-if="currentAd.type === 'image' && isImageVisible" ref="imageElement"
+        :src="currentAd.path ? currentAd.path : currentAd.file.path" :alt="currentAd.title || 'Advertisement Image'"
+        class="block max-h-full object-contain" :class="{
           'w-screen h-screen object-contain drop-shadow-lg': isFullscreen,
-        }"
-        :width="isFullscreen ? '100%' : mediaWidth"
-        @error="nextAd"
-      />
+        }" :width="isFullscreen ? '100%' : mediaWidth" @error="nextAd" />
 
-      <video
-        v-if="currentAd.type === 'video' && isVideoVisible"
-        ref="videoElement"
-        :width="isFullscreen ? '100%' : mediaWidth"
-        :src="currentAd.path ? currentAd.path : currentAd.file.path"
-        class="block aspect-video object-contain"
-        :class="{
+      <video v-if="currentAd.type === 'video' && isVideoVisible" ref="videoElement"
+        :width="isFullscreen ? '100%' : mediaWidth" :src="currentAd.path ? currentAd.path : currentAd.file.path"
+        class="block aspect-video object-contain" :class="{
           'w-screen h-screen object-contain drop-shadow-lg transform-gpu':
             isFullscreen,
           'will-change-transform': isFullscreen,
-        }"
-        autoplay
-        loop
-        playsinline
-        preload="auto"
-        @error="nextAd"
-        @ended="handleVideoEnd"
-      ></video>
+        }" autoplay loop playsinline preload="auto" @error="nextAd" @ended="handleVideoEnd"></video>
 
-      <div
-        class="absolute bottom-2.5 right-2.5 bg-black/50 text-white px-2.5 py-1.5 rounded text-sm"
-      >
+      <div class="absolute bottom-2.5 right-2.5 bg-black/50 text-white px-2.5 py-1.5 rounded text-sm">
         {{ remainingTime }}秒
       </div>
     </div>
     <div v-else>出错了呜呜呜</div>
-
-    <!-- 修改切换宽高比的按钮位置和文字 -->
-    <button
-      v-if="!isFullscreen"
-      @click="toggleAspectRatio"
-      class="absolute bottom-2.5 right-[75px] bg-black/50 text-white px-2.5 py-1.5 rounded text-sm transition-all duration-200"
-      title="切换广告区域宽高比"
-    >
-      {{ currentRatio }}
-    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch, onMounted } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 
 import { useAdsStore } from "@renderer/stores/ads_store";
 import type { Advertisement } from "@renderer/apis";
@@ -70,39 +38,6 @@ import { useAdCycle } from "@renderer/composables/useAdCycle";
 import { useVideoPlayer } from "@renderer/composables/useVideoPlayer";
 import { useScreenController } from "@renderer/composables/useScreenController";
 import { useFlowStore } from "@renderer/stores/flow_store";
-
-// 添加宽高比控制
-const isWideAspect = ref(false); // 默认使用21:3的宽高比
-const aspectRatio = computed(() =>
-  isWideAspect.value ? "aspect-[21/9]" : "aspect-[21/3]",
-);
-const currentRatio = computed(() => (isWideAspect.value ? "21/9" : "21/3"));
-
-// 切换宽高比的函数
-const toggleAspectRatio = () => {
-  isWideAspect.value = !isWideAspect.value;
-  // 可以在本地存储中保存用户偏好
-  localStorage.setItem("adAspectRatio", isWideAspect.value ? "21/9" : "21/3");
-  // 添加日志以便调试
-  console.log(`切换广告比例为: ${isWideAspect.value ? "21/9" : "21/3"}`);
-};
-
-// 从本地存储加载用户偏好的宽高比设置
-onMounted(() => {
-  // 强制设置为默认使用21:3的比例
-  isWideAspect.value = false;
-
-  // 检查本地存储中的比例设置，只有明确设置了21/9才使用宽比例
-  const savedRatio = localStorage.getItem("adAspectRatio");
-  if (savedRatio === "21/9") {
-    isWideAspect.value = true;
-  } else {
-    // 如果没有设置或设置不是21/9，则默认使用21/3并保存这个设置
-    localStorage.setItem("adAspectRatio", "21/3");
-  }
-
-  console.log(`广告比例初始化为: ${isWideAspect.value ? "21/9" : "21/3"}`);
-});
 
 const screenController = useScreenController({
   idleTimeout: 10000,

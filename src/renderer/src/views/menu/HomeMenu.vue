@@ -24,51 +24,30 @@
           </p>
         </button>
 
-        <!-- 缴费表单卡片 -->
+        <!-- 失物招领卡片 -->
         <button
-          @click="handleMenuClick('payment')"
-          @keydown.enter="handleMenuClick('payment')"
+          @click="handleMenuClick('lost-found')"
+          @keydown.enter="handleMenuClick('lost-found')"
           class="h-1/3 bg-white rounded-xl border border-grey p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-md hover:border-primary/20 transition-all duration-200 flex flex-col items-center justify-center mb-4"
           tabindex="0"
           aria-label="物業繳費"
         >
           <div class="flex flex-col items-center">
             <span class="text-3xl font-bold text-primary tracking-wider mb-3"
-              >缴费表单</span
+              >電子繳費</span
             >
             <span class="text-sm font-medium text-[#8E8E93] tracking-widest"
-              >Payment Form</span
+              >Payment</span
             >
           </div>
-          <p class="text-sm text-neutral/70 mt-6 text-center">缴费表单</p>
-        </button>
-
-        <!-- AI智能助手卡片 -->
-        <button
-          @click="handleMenuClick('ai-assistant')"
-          @keydown.enter="handleMenuClick('ai-assistant')"
-          class="mb-4 h-1/3 bg-white rounded-xl border border-grey p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-md hover:border-primary/20 transition-all duration-200 flex flex-col items-center justify-center"
-          tabindex="0"
-          aria-label="AI智能助手"
-        >
-          <div class="flex flex-col items-center">
-            <span class="text-3xl font-bold text-primary tracking-wider mb-3"
-              >AI智能助手</span
-            >
-            <span class="text-sm font-medium text-[#8E8E93] tracking-widest"
-              >AI Assistant</span
-            >
-          </div>
-          <p class="text-sm text-neutral/70 mt-6 text-center">
-            使用AI智能助手解答问题
-          </p>
+          <p class="text-sm text-neutral/70 mt-6 text-center">以電子支付繳費</p>
         </button>
 
         <!-- 社区活动卡片 -->
         <button
           @click="handleMenuClick('activities')"
           @keydown.enter="handleMenuClick('activities')"
-          class="h-1/3 bg-white rounded-xl border border-grey p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-md hover:border-primary/20 transition-all duration-200 flex flex-col items-center justify-center mb-4"
+          class="h-1/3 bg-white rounded-xl border border-grey p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-md hover:border-primary/20 transition-all duration-200 flex flex-col items-center justify-center"
           tabindex="0"
           aria-label="社區活動"
         >
@@ -87,20 +66,14 @@
       </div>
 
       <!-- 右侧公告区域 - 整合 NoticePage 功能 -->
-      <div
-        class="flex-1 min-w-0 bg-white rounded-xl border border-grey shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-4 overflow-y-auto hover:shadow-md hover:border-primary/20 transition-all duration-200"
-      >
+      <div class="flex-1 min-w-0 bg-white rounded-xl border border-grey shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-4 overflow-y-auto hover:shadow-md hover:border-primary/20 transition-all duration-200">
         <!-- 通知页面标题和导航 -->
         <div class="flex justify-between items-center mb-6">
           <div class="flex flex-col">
-            <span class="text-3xl font-bold text-primary tracking-wider mb-3">{{
-              noticeTitle
-            }}</span>
-            <span class="text-sm font-medium text-[#8E8E93] tracking-widest">{{
-              noticeTitleEn
-            }}</span>
+            <span class="text-3xl font-bold text-primary tracking-wider mb-3">{{ noticeTitle }}</span>
+            <span class="text-sm font-medium text-[#8E8E93] tracking-widest">{{ noticeTitleEn }}</span>
           </div>
-
+          
           <!-- 导航按钮组 -->
           <div class="flex items-center gap-2">
             <button
@@ -111,7 +84,7 @@
                 'focus:outline-none focus:ring-2 focus:ring-blue-500',
                 pageStore.currentNoticeType === nav.type
                   ? 'bg-blue-50 text-blue-600'
-                  : 'text-gray-600 hover:bg-gray-50',
+                  : 'text-gray-600 hover:bg-gray-50'
               ]"
               @click="handleTypeChange(nav.type)"
               tabindex="0"
@@ -127,7 +100,8 @@
           <div
             v-for="(notice, index) in paginatedNotices"
             :key="index"
-            class="bg-white rounded-xl border border-gray-200 p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-lg transition-shadow cursor-pointer"
+            class="bg-white rounded-xl border border-gray-200 p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] 
+                   hover:shadow-lg transition-shadow cursor-pointer"
             @click="handleNoticeClick(notice)"
             @keydown.enter="handleNoticeClick(notice)"
             tabindex="0"
@@ -135,9 +109,7 @@
           >
             <div class="flex justify-between items-center">
               <div class="space-y-2">
-                <h3 class="text-lg font-semibold text-gray-900">
-                  {{ notice.title }}
-                </h3>
+                <h3 class="text-lg font-semibold text-gray-900">{{ notice.title }}</h3>
                 <div class="flex items-center gap-4">
                   <span class="text-sm text-gray-500">
                     類型: {{ getNoticeTypeName(notice.type) }}
@@ -172,7 +144,9 @@
         <div class="border-t border-gray-200 pt-4 mt-auto">
           <div class="flex justify-center items-center gap-4">
             <button
-              class="flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 bg-white text-primary border border-gray-200 hover:bg-gray-50 disabled:hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50
+                    bg-white text-primary border border-gray-200 hover:bg-gray-50 disabled:hover:bg-white
+                    focus:outline-none focus:ring-2 focus:ring-blue-500"
               @click="handlePreviousPage"
               :disabled="pageStore.currentPage === 1"
               tabindex="0"
@@ -187,7 +161,9 @@
             </span>
 
             <button
-              class="flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 bg-white text-primary border border-gray-200 hover:bg-gray-50 disabled:hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50
+                    bg-white text-primary border border-gray-200 hover:bg-gray-50 disabled:hover:bg-white
+                    focus:outline-none focus:ring-2 focus:ring-blue-500"
               @click="handleNextPage"
               :disabled="pageStore.currentPage === totalPages"
               tabindex="0"
@@ -212,7 +188,7 @@ import { usePageStore, type NoticePageType } from "@renderer/stores/page_store";
 import type { Notice } from "@renderer/apis";
 
 // 定义带有格式化日期的通知类型
-interface NoticeWithFormattedDate extends Omit<Notice, "description" | "file"> {
+interface NoticeWithFormattedDate extends Omit<Notice, 'description' | 'file'> {
   formattedDate: string;
   // 为了兼容 NoticePage.vue 的字段
   created_at?: string;
@@ -226,12 +202,12 @@ interface NoticeWithFormattedDate extends Omit<Notice, "description" | "file"> {
     md5: string;
     path: string;
     mimeType: string;
-    oss: "local" | "aws" | string;
+    oss: 'local' | 'aws' | string;
     uploader: string;
     uploaderId: number;
     uploaderType: string;
   };
-  type: "urgent" | "building" | "government" | "normal";
+  type: 'urgent' | 'building' | 'government' | 'normal';
 }
 
 const router = useRouter();
@@ -240,50 +216,34 @@ const pageStore = usePageStore();
 
 // 导航项定义
 const navigation = [
-  { label: "全體通告", type: "all" as NoticePageType, titleEn: "All Notices" },
-  {
-    label: "緊急通告",
-    type: "urgent" as NoticePageType,
-    titleEn: "Urgent Notices",
-  },
-  {
-    label: "一般通告",
-    type: "general" as NoticePageType,
-    titleEn: "General Notices",
-  },
-  {
-    label: "法團通告",
-    type: "corporate" as NoticePageType,
-    titleEn: "Corporate Notices",
-  },
-  {
-    label: "政府通告",
-    type: "government" as NoticePageType,
-    titleEn: "Government Notices",
-  },
+  { label: '全體通告', type: 'all' as NoticePageType, titleEn: 'All Notices' },
+  { label: '緊急通告', type: 'urgent' as NoticePageType, titleEn: 'Urgent Notices' },
+  { label: '一般通告', type: 'general' as NoticePageType, titleEn: 'General Notices' },
+  { label: '法團通告', type: 'corporate' as NoticePageType, titleEn: 'Corporate Notices' },
+  { label: '政府通告', type: 'government' as NoticePageType, titleEn: 'Government Notices' }
 ];
 
 // 获取通知类型名称
 const getNoticeTypeName = (type: string): string => {
   const types: Record<string, string> = {
-    urgent: "緊急通告",
-    building: "法團通告",
-    government: "政府通告",
-    normal: "一般通告",
+    urgent: '緊急通告',
+    building: '法團通告',
+    government: '政府通告',
+    normal: '一般通告'
   };
-  return types[type] || "其他";
+  return types[type] || '其他';
 };
 
 // 格式化日期
 const formatDate = (dateStr?: string) => {
-  if (!dateStr) return "無時間";
+  if (!dateStr) return '無時間';
   const date = new Date(dateStr);
-  return date.toLocaleDateString("zh-HK", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
+  return date.toLocaleDateString('zh-HK', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
   });
 };
 
@@ -293,9 +253,9 @@ const allNotices = ref<NoticeWithFormattedDate[]>([]);
 // 加载通知数据
 const loadNotices = () => {
   const notices: NoticeWithFormattedDate[] = [];
-
+  
   // 合并所有类型的通知
-  noticeStore.downloadedNotices.forEach((item) => {
+  noticeStore.downloadedNotices.forEach(item => {
     const notice = item.notice;
     notices.push({
       id: notice.id,
@@ -311,7 +271,7 @@ const loadNotices = () => {
       fileId: notice.fileId,
       fileType: notice.fileType,
       formattedDate: formatDate(notice.createdAt),
-      endTime: notice.endTime,
+      endTime:notice.endTime
     });
   });
 
@@ -325,31 +285,31 @@ const loadNotices = () => {
 
 // 通知标题
 const noticeTitle = computed(() => {
-  const nav = navigation.find((n) => n.type === pageStore.currentNoticeType);
-  return nav ? nav.label : "所有通告";
+  const nav = navigation.find(n => n.type === pageStore.currentNoticeType);
+  return nav ? nav.label : '所有通告';
 });
 
 // 通知英文标题
 const noticeTitleEn = computed(() => {
-  const nav = navigation.find((n) => n.type === pageStore.currentNoticeType);
-  return nav ? nav.titleEn : "All Notices";
+  const nav = navigation.find(n => n.type === pageStore.currentNoticeType);
+  return nav ? nav.titleEn : 'All Notices';
 });
 
 // 过滤当前类型的通知
 const currentTypeNotices = computed(() => {
-  if (pageStore.currentNoticeType === "all") {
+  if (pageStore.currentNoticeType === 'all') {
     return allNotices.value;
   }
-
+  
   const typeMapping: Record<string, string> = {
-    urgent: "urgent",
-    general: "normal",
-    corporate: "building",
-    government: "government",
+    'urgent': 'urgent',
+    'general': 'normal',
+    'corporate': 'building',
+    'government': 'government'
   };
-
+  
   const targetType = typeMapping[pageStore.currentNoticeType];
-  return allNotices.value.filter((notice) => notice.type === targetType);
+  return allNotices.value.filter(notice => notice.type === targetType);
 });
 
 // 分页后的通知
@@ -361,10 +321,7 @@ const paginatedNotices = computed(() => {
 
 // 总页数
 const totalPages = computed(() => {
-  return Math.max(
-    1,
-    Math.ceil(currentTypeNotices.value.length / pageStore.itemsPerPage),
-  );
+  return Math.max(1, Math.ceil(currentTypeNotices.value.length / pageStore.itemsPerPage));
 });
 
 // 处理导航类型切换
@@ -387,16 +344,6 @@ const handleNextPage = () => {
 const handleMenuClick = (route: string) => {
   if (route === "fees") {
     router.push("/arrearage-find");
-    return;
-  }
-
-  if (route === "payment") {
-    router.push("/arrearage-table");
-    return;
-  }
-
-  if (route === "ai-assistant") {
-    router.push("/ai-assistant");
     return;
   }
 
@@ -442,21 +389,17 @@ watch(
   () => {
     loadNotices();
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 // 监控当前页面是否超出了总页数
 watch(
-  [
-    () => pageStore.currentPage,
-    () => totalPages.value,
-    () => pageStore.currentNoticeType,
-  ],
+  [() => pageStore.currentPage, () => totalPages.value, () => pageStore.currentNoticeType],
   ([currentPage, totalPagesValue]) => {
     if (currentPage > totalPagesValue && totalPagesValue > 0) {
       pageStore.setCurrentPage(totalPagesValue);
     }
-  },
+  }
 );
 </script>
 

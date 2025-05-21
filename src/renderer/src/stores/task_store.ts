@@ -1,24 +1,24 @@
-import { defineStore } from "pinia";
-import { timeTask } from "@renderer/utils/time-task";
-import { useNotificationStore } from "./noticefication_store";
-import type { DeviceSettings } from "./building_store";
+import { defineStore } from 'pinia';
+import { timeTask } from '@renderer/utils/time-task';
+import { useNotificationStore } from './noticefication_store';
+import type { DeviceSettings } from './building_store';
 
-export const useTaskStore = defineStore("task", {
+export const useTaskStore = defineStore('task', {
   state: () => ({
     retryCount: 0 as number,
     maxRetries: 3 as number,
     // 修改为秒为单位
     intervals: {
-      arrearage: 300, // 5分钟 = 300秒
-      pdf: 600, // 10分钟 = 600秒
-      ads: 900, // 15分钟 = 900秒
+      arrearage: 300,  // 5分钟 = 300秒
+      pdf: 600,        // 10分钟 = 600秒
+      ads: 900         // 15分钟 = 900秒
     },
     // 存储各个定时器ID
     scheduledTaskIds: {
       arrearage: null as number | null,
       pdf: null as number | null,
-      ads: null as number | null,
-    },
+      ads: null as number | null
+    }
   }),
 
   getters: {
@@ -28,7 +28,7 @@ export const useTaskStore = defineStore("task", {
     // 添加获取间隔时间的 getter
     getInterval: (state) => (type: keyof typeof state.intervals) => {
       return state.intervals[type];
-    },
+    }
   },
 
   actions: {
@@ -38,9 +38,9 @@ export const useTaskStore = defineStore("task", {
       this.intervals = {
         arrearage: settings.arrearageUpdateDuration,
         pdf: settings.noticeUpdateDuration,
-        ads: settings.advertisementUpdateDuration,
+        ads: settings.advertisementUpdateDuration
       };
-
+      
       // 重启所有定时任务以应用新的间隔时间
       this.stopAllTasks();
       this.startAllTasks();
@@ -56,8 +56,8 @@ export const useTaskStore = defineStore("task", {
 
     // 开始所有定时任务
     startAllTasks() {
-      console.log("启动数据更新定时任务 - 自动跳转功能已禁用");
-      Object.keys(this.intervals).forEach((type) => {
+      console.log('startAllTasks')
+      Object.keys(this.intervals).forEach(type => {
         this.startTask(type as keyof typeof this.intervals);
       });
     },
@@ -66,13 +66,13 @@ export const useTaskStore = defineStore("task", {
     startTask(type: keyof typeof this.intervals) {
       // 先清除现有的定时器
       this.stopTask(type);
-
-      // 设置新的定时器，仅执行数据更新，不触发屏幕跳转
+      
+      // 设置新的定时器，直接使用秒数 * 1000
       this.scheduledTaskIds[type] = window.setInterval(() => {
         this.executeTask(type);
       }, this.intervals[type] * 1000);
 
-      // 立即执行一次数据更新
+      // 立即执行一次
       this.executeTask(type);
     },
 
@@ -86,13 +86,13 @@ export const useTaskStore = defineStore("task", {
 
     // 停止所有定时任务
     stopAllTasks() {
-      Object.keys(this.scheduledTaskIds).forEach((type) => {
+      Object.keys(this.scheduledTaskIds).forEach(type => {
         this.stopTask(type as keyof typeof this.intervals);
       });
     },
 
     async executeTask(type: keyof typeof this.intervals) {
-      console.log("executeTask", type);
+      console.log('executeTask', type)
 
       try {
         await timeTask(type);
@@ -100,32 +100,29 @@ export const useTaskStore = defineStore("task", {
       } catch (error) {
         console.error(`Task execution failed (${type}):`, error);
         const notificationStore = useNotificationStore();
-
+        
         if (this.canRetry) {
           this.retryCount++;
           notificationStore.addNotification(
             `${type}任務執行失敗，正在重試 (${this.retryCount}/${this.maxRetries})`,
-            "warning",
+            'warning'
           );
           // 5秒后重试
           setTimeout(() => this.executeTask(type), 5000);
         } else {
-          notificationStore.addNotification(
-            `${type}任務執行失敗，已達到最大重試次數`,
-            "error",
-          );
+          notificationStore.addNotification(`${type}任務執行失敗，已達到最大重試次數`, 'error');
           this.retryCount = 0;
         }
-      }
+      } 
     },
 
     // 初始化任务
     initialize() {
-      const isLoggedIn =
-        localStorage.getItem("token") && localStorage.getItem("ismartId");
+      const isLoggedIn = localStorage.getItem('token') && localStorage.getItem('ismartId');
       if (isLoggedIn) {
         this.startAllTasks();
       }
-    },
+    }
   },
+
 });

@@ -1,13 +1,13 @@
 <template>
   <div class="flex flex-col h-screen w-screen overflow-hidden bg-white">
-    <!-- 顶部广告区域 - 使用自适应高度 -->
-    <div class="w-full shadow-md shrink-0">
-      <AdvertisementTop class="w-full" />
+    <!-- 顶部广告区域 -->
+    <div class="w-full aspect-[21/9] shadow-md shrink-0">
+      <AdvertisementTop class="w-full h-full" />
     </div>
 
     <!-- 导航栏区域 -->
     <div
-      class="w-full h-[1.6rem] shadow-sm bg-white sticky top-0 mb-3 z-50 shrink-0"
+      class="w-full h-[5rem] shadow-sm bg-white sticky top-0 mb-4 z-50 shrink-0"
     >
       <NavBar class="w-full h-full" />
     </div>
@@ -18,7 +18,7 @@
     </div>
 
     <!-- 底部区域 - 固定在底部 -->
-    <div class="w-full h-[10rem] shadow-inner bg-white shrink-0">
+    <div class="w-full h-[15rem] shadow-inner bg-white shrink-0">
       <CombinedFooter class="w-full h-full" />
     </div>
   </div>
@@ -57,7 +57,7 @@ const handleAutoLogin = async () => {
   try {
     const deviceId = await getDeviceId();
     const loginData = {
-      deviceId: "DEVICE_1DA24A3A",
+      deviceId,
     };
 
     const response = await api.login(loginData);
@@ -108,13 +108,12 @@ const handleInitialLogin = async () => {
     // 获取 taskStore 实例
     const taskStore = useTaskStore();
 
-    // 执行初始任务下载，但不自动进入任何页面
+    // 执行初始任务下载
     await taskStore.executeTask("ads");
     await taskStore.executeTask("pdf");
     await taskStore.executeTask("arrearage");
 
-    // 不再自动启动轮播和跳转的定时任务
-    // 仅保留数据更新的定时任务
+    // 启动定时任务
     taskStore.startAllTasks();
 
     notificationStore.addNotification("初始登录成功", "success");
