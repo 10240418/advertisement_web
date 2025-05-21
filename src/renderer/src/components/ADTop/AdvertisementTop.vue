@@ -19,7 +19,7 @@
           'w-screen h-screen object-contain drop-shadow-lg': isFullscreen,
         }"
         :width="isFullscreen ? '100%' : mediaWidth"
-        @error="nextAd"
+        @error="handleImageError"
       />
 
       <video
@@ -35,9 +35,11 @@
         }"
         autoplay
         loop
+        muted
         playsinline
         preload="auto"
-        @error="nextAd"
+        @error="handleVideoError"
+        @loadedmetadata="handleVideoLoaded"
         @ended="handleVideoEnd"
       ></video>
 
@@ -166,127 +168,116 @@ const adsHasDownloadMap = computed(() => {
   return map;
 });
 
-// 优化广告资源获取逻辑
+// Get ad resource path, with logging
 const getAdPath = (ad: CurrentAd | null): string => {
   if (!ad) return "";
-
-  // 如果是已下载的广告，优先使用下载路径
+  // Log ad info
+  console.log("[getAdPath] Ad info:", {
+    id: ad.id,
+    title: ad.title,
+    type: ad.type,
+    hasPath: !!ad.path,
+    path: ad.path,
+    hasFilePath: !!ad.file?.path,
+    filePath: ad.file?.path,
+  });
+  // Prefer downloaded path
   if (ad.path) {
+    console.log(`[getAdPath] Use downloaded path: ${ad.path}`);
     return ad.path;
   }
-
-  // 如果有 file 属性且包含 path
   if (ad.file?.path) {
+    console.log(`[getAdPath] Use file.path: ${ad.file.path}`);
     return ad.file.path;
   }
-
+  console.warn("[getAdPath] No valid path for ad");
   return "";
 };
 
-/* video and image show loop */
+// Start ad cycle, with logging
 const startAdCycle = async () => {
   clearAdTimer();
   clearCountdownTimer();
-
   if (!ads.value?.length) {
-    console.warn("没有可用的广告");
+    console.warn("[startAdCycle] No ads available");
     currentAd.value = null;
     return;
   }
-
   try {
     if (currentAdIndex.value >= ads.value.length) {
       currentAdIndex.value = 0;
     }
-
     const ad = ads.value[currentAdIndex.value];
     if (!ad) {
-      console.warn("当前索引的广告不存在");
+      console.warn("[startAdCycle] No ad at current index");
       nextAd();
       return;
     }
-
-    // 输出当前广告信息
-    console.log("[Advertisement]", {
-      id: ad.id,
-      title: ad.title,
-      type: ad.type,
-      display: ad.display,
-      duration: ad.duration,
-      isFullscreen: isFullscreen.value,
-      currentIndex: currentAdIndex.value,
-      totalAds: ads.value.length,
-    });
-
-    // 检查广告显示位置是否符合当前状态
+    // Log ad switching
+    console.log(
+      `[startAdCycle] Switching to ad: id=${ad.id}, title=${ad.title}, type=${ad.type}`,
+    );
+    // Check display position
     const isValidDisplay = isFullscreen.value
       ? ad.display === "full" || ad.display === "topfull"
       : ad.display === "top" || ad.display === "topfull";
-
     if (!isValidDisplay) {
-      console.warn("广告显示位置不匹配当前状态");
+      console.warn("[startAdCycle] Ad display position mismatch, skip");
       nextAd();
       return;
     }
-
     const downloadedAd = adsHasDownloadMap.value?.get(ad.id);
     currentAd.value = downloadedAd || ad;
-
-    // 验证广告资源是否存在
+    // Validate ad resource
     const adPath = getAdPath(currentAd.value);
     if (!adPath) {
-      console.warn("广告资源路径无效，跳转到下一个广告");
+      console.warn("[startAdCycle] Invalid ad resource path, skip");
       nextAd();
       return;
     }
-
-    // 使用广告自身的 duration，如果没有则使用默认值 5
     const playDuration = ad.duration || 5;
-
     startCountdown(playDuration, nextAd);
-
     const isVideo = currentAd.value?.type === "video";
-
     if (isVideo) {
       showVideo();
       await playVideo();
+      console.log(`[startAdCycle] Playing video: ${adPath}`);
     } else {
       showImage();
+      console.log(`[startAdCycle] Showing image: ${adPath}`);
     }
-
-    // 使用广告的 duration 设置定时器
     adTimer.value = window.setTimeout(nextAd, playDuration * 1000);
   } catch (error) {
-    console.error("广告循环出错:", error);
+    console.error("[startAdCycle] Error in ad cycle:", error);
     nextAd();
   }
 };
 
+// Show image, with log
 const showImage = () => {
   isImageVisible.value = true;
   isVideoVisible.value = false;
+  console.log("[showImage] Show image");
 };
 
+// Show video, with log
 const showVideo = () => {
   isImageVisible.value = false;
   isVideoVisible.value = true;
-
   if (videoElement.value) {
-    // 设置视频播放质量
     if (isFullscreen.value) {
       videoElement.value.style.objectFit = "contain";
-      // 如果需要，可以限制最大分辨率
-      // videoElement.value.style.maxHeight = '1080px'
     }
-
+    const videoSrc = videoElement.value.getAttribute("src");
+    console.log(`[showVideo] Video element src: ${videoSrc}`);
+    console.log(
+      `[showVideo] Video state: networkState=${videoElement.value.networkState}, readyState=${videoElement.value.readyState}`,
+    );
     const handleLoadedMetadata = () => {
       videoElement.value!.currentTime = 0;
-
-      // 设置播放品质
       if (videoElement.value!.videoHeight > 1080) {
         videoElement.value!.style.transform = "scale(0.75)";
       }
-
       const playPromise = videoElement.value!.play();
       if (playPromise !== undefined) {
         playPromise
@@ -296,12 +287,11 @@ const showVideo = () => {
             }
           })
           .catch((err) => {
-            console.warn("视频播放切换到下一个广告:", err);
+            console.warn("[showVideo] Video play error, skip to next ad:", err);
             nextAd();
           });
       }
     };
-
     if (videoElement.value.readyState >= 1) {
       handleLoadedMetadata();
     } else {
@@ -318,15 +308,15 @@ const handleVideoEnd = () => {
   // 视频循环播放，不做额外处理
 };
 
-// next ad
+// nextAd, with log
 const nextAd = () => {
   if (!ads.value?.length) {
     currentAdIndex.value = 0;
     currentAd.value = null;
     return;
   }
-
   currentAdIndex.value = (currentAdIndex.value + 1) % ads.value.length;
+  console.log(`[nextAd] Switch to ad index: ${currentAdIndex.value}`);
   startAdCycle();
 };
 
@@ -392,6 +382,29 @@ const handleResize = (size: { width: number; height: number }) => {
 
 // 注册窗口大小变化监听器
 window.api.onWindowResize(handleResize);
+
+// Handle video error, with log
+const handleVideoError = (event) => {
+  console.error("[handleVideoError] Video load error:", event);
+  console.log("[handleVideoError] Video element state:", {
+    src: videoElement.value?.src,
+    error: videoElement.value?.error?.message || "Unknown error",
+  });
+  console.log("[handleVideoError] Try next ad");
+  nextAd();
+};
+
+// Handle image error, with log
+const handleImageError = (event) => {
+  console.error("[handleImageError] Image load error:", event);
+  console.log("[handleImageError] Try next ad");
+  nextAd();
+};
+
+// Handle video loaded, with log
+const handleVideoLoaded = () => {
+  console.log("[handleVideoLoaded] Video metadata loaded, ready to play");
+};
 
 onBeforeUnmount(() => {
   clearAdTimer();

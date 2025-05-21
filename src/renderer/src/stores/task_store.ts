@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { timeTask } from "@renderer/utils/time-task";
+import { timeTask, downloadAllAds } from "@renderer/utils/time-task";
 import { useNotificationStore } from "./noticefication_store";
 import type { DeviceSettings } from "./building_store";
 
@@ -124,8 +124,26 @@ export const useTaskStore = defineStore("task", {
       const isLoggedIn =
         localStorage.getItem("token") && localStorage.getItem("ismartId");
       if (isLoggedIn) {
+        // 启动定时任务
         this.startAllTasks();
+
+        // 立即执行广告下载，不等待定时器触发
+        console.log("初始化：立即执行广告下载");
+        this.executeTask("ads");
+
+        // 直接调用下载所有广告
+        downloadAllAds()
+          .then(() => {
+            console.log("初始化时的广告下载完成");
+            useNotificationStore().addNotification("广告资源已更新", "success");
+          })
+          .catch((error) => {
+            console.error("初始化时的广告下载失败:", error);
+            useNotificationStore().addNotification("广告资源更新失败", "error");
+          });
       }
     },
   },
+
+  persist: true,
 });

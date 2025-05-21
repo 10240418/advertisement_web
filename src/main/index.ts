@@ -13,9 +13,8 @@ import icon from "../../resources/icon.png?asset";
 
 // 在文件顶部添加这个函数来获取应用程序目录路径
 const getAppPath = () => {
-  // 在开发环境中使用 process.cwd()
-  // 在生产环境中使用 app.getAppPath()
-  return is.dev ? process.cwd() : path.dirname(app.getAppPath());
+  // 强制返回 advertisement_web 目录，确保静态资源路径一致
+  return "D:/schooll/advertisement_web";
 };
 
 // 在文件顶部添加这个函数来获取静态资源目录路径
@@ -23,6 +22,140 @@ const getStaticPath = () => {
   const appPath = getAppPath();
   const staticPath = path.join(appPath, "static");
   return staticPath;
+};
+
+// 确保所有必要的目录都存在
+const ensureDirectories = async () => {
+  try {
+    const staticPath = getStaticPath();
+
+    // 创建主static目录
+    await fs.promises.mkdir(staticPath, { recursive: true });
+    console.log(`[目录初始化] 已创建 static 目录: ${staticPath}`);
+
+    // 创建广告资源子目录
+    const imgDir = path.join(staticPath, "img");
+    const videoDir = path.join(staticPath, "video");
+    const noticeDir = path.join(staticPath, "notice");
+
+    await fs.promises.mkdir(imgDir, { recursive: true });
+    console.log(`[目录初始化] 已创建 img 目录: ${imgDir}`);
+
+    await fs.promises.mkdir(videoDir, { recursive: true });
+    console.log(`[目录初始化] 已创建 video 目录: ${videoDir}`);
+
+    await fs.promises.mkdir(noticeDir, { recursive: true });
+    console.log(`[目录初始化] 已创建 notice 目录: ${noticeDir}`);
+
+    // 创建通知类型子目录
+    const commonNoticeDir = path.join(noticeDir, "common");
+    const advNoticeDir = path.join(noticeDir, "adv");
+    const normalNoticeDir = path.join(noticeDir, "normal");
+
+    await fs.promises.mkdir(commonNoticeDir, { recursive: true });
+    await fs.promises.mkdir(advNoticeDir, { recursive: true });
+    await fs.promises.mkdir(normalNoticeDir, { recursive: true });
+
+    console.log("[目录初始化] 所有静态资源目录已创建完成");
+
+    // 尝试从旧目录迁移文件
+    await migrateFromOldPath();
+  } catch (error) {
+    console.error("[目录初始化] 创建目录失败:", error);
+  }
+};
+
+// 尝试从旧目录迁移文件的函数
+const migrateFromOldPath = async () => {
+  try {
+    // 常见的旧目录路径
+    const possibleOldPaths = [
+      "D:\\schooll\\iboard_electron_building\\static",
+      "D:/schooll/iboard_electron_building/static",
+    ];
+
+    let oldPath: string | null = null;
+
+    // 检查哪个旧路径存在
+    for (const testPath of possibleOldPaths) {
+      try {
+        await fs.promises.access(testPath);
+        oldPath = testPath;
+        console.log(`[迁移] 找到旧目录: ${oldPath}`);
+        break;
+      } catch (e) {
+        // 旧路径不存在，继续尝试下一个
+      }
+    }
+
+    if (!oldPath) {
+      console.log("[迁移] 没有找到旧目录，无需迁移");
+      return;
+    }
+
+    const newPath = getStaticPath();
+
+    // 迁移函数 - 递归复制目录结构
+    const migratePath = async (oldSubPath: string, newSubPath: string) => {
+      try {
+        // 确保目标目录存在
+        await fs.promises.mkdir(newSubPath, { recursive: true });
+
+        // 获取源目录内容
+        const entries = await fs.promises.readdir(oldSubPath, {
+          withFileTypes: true,
+        });
+
+        let filesCount = 0;
+        let dirsCount = 0;
+
+        // 遍历所有条目
+        for (const entry of entries) {
+          const srcPath = path.join(oldSubPath, entry.name);
+          const destPath = path.join(newSubPath, entry.name);
+
+          if (entry.isDirectory()) {
+            // 如果是目录，递归处理
+            const result = await migratePath(srcPath, destPath);
+            filesCount += result.files;
+            dirsCount += result.dirs;
+          } else {
+            // 如果是文件，检查目标文件是否存在
+            try {
+              await fs.promises.access(destPath);
+              // 文件已存在，跳过
+            } catch {
+              // 文件不存在，复制
+              await fs.promises.copyFile(srcPath, destPath);
+              filesCount++;
+            }
+          }
+        }
+
+        return { files: filesCount, dirs: dirsCount };
+      } catch (error) {
+        console.error(
+          `[迁移] 迁移目录失败 ${oldSubPath} -> ${newSubPath}:`,
+          error,
+        );
+        return { files: 0, dirs: 0 };
+      }
+    };
+
+    // 开始迁移
+    console.log(`[迁移] 开始从 ${oldPath} 迁移文件到 ${newPath}`);
+    const result = await migratePath(oldPath, newPath);
+    console.log(
+      `[迁移] 迁移完成: 复制了 ${result.files} 个文件，${result.dirs} 个目录`,
+    );
+
+    // 添加一个IPC处理程序，让渲染进程可以重新加载文件
+    ipcMain.handle("reload-resources", async () => {
+      return { success: true, migrated: result.files > 0 };
+    });
+  } catch (error) {
+    console.error("[迁移] 迁移过程出错:", error);
+  }
 };
 
 // 创建主窗口的函数
@@ -79,9 +212,12 @@ function createWindow(): void {
 }
 
 // 当 Electron 完成初始化时执行
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // 设置 Windows 应用程序用户模型 ID
   electronApp.setAppUserModelId("com.electron");
+
+  // 确保所有必要的目录都存在
+  await ensureDirectories();
 
   // 监听窗口创建事件，设置快捷键
   app.on("browser-window-created", (_, window) => {
@@ -208,28 +344,43 @@ const sanitizeFilename = (filename: string): string => {
   return filename.replace(/[^a-zA-Z0-9_\-.]/g, "_");
 };
 
-// 添加删除文件的IPC处理函数
+// 添加 check-path IPC 处理程序
+ipcMain.handle("check-path", async (_event, relativePath) => {
+  try {
+    // 获取完整路径
+    const fullPath = path.join(getStaticPath(), relativePath);
+    console.log(`[路径检查] 检查路径: ${fullPath}`);
+
+    // 检查路径是否存在
+    await fs.promises.access(fullPath);
+    console.log(`[路径检查] 路径存在: ${fullPath}`);
+    return { exists: true, path: fullPath };
+  } catch (error) {
+    console.error(`[路径检查] 路径不存在 "${relativePath}":`, error);
+
+    // 尝试创建路径
+    try {
+      const fullPath = path.join(getStaticPath(), relativePath);
+      await fs.promises.mkdir(fullPath, { recursive: true });
+      console.log(`[路径检查] 已创建路径: ${fullPath}`);
+      return { exists: false, created: true, path: fullPath };
+    } catch (createError: any) {
+      console.error(`[路径检查] 无法创建路径 "${relativePath}":`, createError);
+      return { exists: false, created: false, error: createError.message };
+    }
+  }
+});
+
+// 添加 delete-file IPC 处理程序
 ipcMain.handle("delete-file", async (_event, filePath) => {
   try {
-    // 验证文件路径，确保安全
-    if (!filePath || typeof filePath !== "string") {
-      return { success: false, error: "无效的文件路径" };
-    }
-
-    // 检查文件是否存在
-    try {
-      await fs.promises.access(filePath);
-    } catch (error) {
-      console.log(`[文件删除] 文件不存在: ${filePath}`);
-      return { success: true, message: "文件不存在" };
-    }
-
-    // 删除文件
+    console.log(`[文件删除] 尝试删除文件: ${filePath}`);
+    await fs.promises.access(filePath);
     await fs.promises.unlink(filePath);
-    console.log(`[文件删除] 成功删除文件: ${filePath}`);
+    console.log(`[文件删除] 文件删除成功: ${filePath}`);
     return { success: true };
   } catch (error: any) {
-    console.error(`[文件删除] 删除失败 "${filePath}":`, error);
+    console.error(`[文件删除] 删除文件失败 "${filePath}":`, error);
     return { success: false, error: error.message };
   }
 });
@@ -316,6 +467,105 @@ ipcMain.handle("get-device-id", () => {
     return "DEVICE_UNKNOWN";
   }
 });
+
+// 添加清理静态目录下载缓存的功能
+ipcMain.handle("clear-downloads-cache", async (_event, types) => {
+  try {
+    const staticPath = getStaticPath();
+    const results = {
+      success: true,
+      deleted: {
+        ads: 0,
+        pdfs: 0,
+      },
+      errors: [] as string[],
+    };
+
+    // 清理广告文件（图片和视频）
+    if (!types || types.includes("ads")) {
+      try {
+        // 清理图片目录
+        const imgDir = path.join(staticPath, "img");
+        await clearDirectory(imgDir);
+
+        // 清理视频目录
+        const videoDir = path.join(staticPath, "video");
+        await clearDirectory(videoDir);
+
+        console.log("[缓存清理] 已清理广告文件缓存");
+        results.deleted.ads = 1; // 简单计数，表示已清理
+      } catch (error: any) {
+        console.error("[缓存清理] 清理广告缓存失败:", error);
+        results.errors.push(`清理广告缓存失败: ${error.message}`);
+      }
+    }
+
+    // 清理PDF文件
+    if (!types || types.includes("pdfs")) {
+      try {
+        // 清理所有通知子目录
+        const noticeDir = path.join(staticPath, "notice");
+        const subDirs = ["common", "adv", "normal"];
+
+        for (const subDir of subDirs) {
+          const fullPath = path.join(noticeDir, subDir);
+          await clearDirectory(fullPath);
+        }
+
+        console.log("[缓存清理] 已清理PDF文件缓存");
+        results.deleted.pdfs = 1; // 简单计数，表示已清理
+      } catch (error: any) {
+        console.error("[缓存清理] 清理PDF缓存失败:", error);
+        results.errors.push(`清理PDF缓存失败: ${error.message}`);
+      }
+    }
+
+    return results;
+  } catch (error: any) {
+    console.error("[缓存清理] 过程中发生错误:", error);
+    return {
+      success: false,
+      error: error.message || "未知错误",
+    };
+  }
+});
+
+// 清空目录但保留目录本身
+const clearDirectory = async (dirPath: string) => {
+  try {
+    // 确保目录存在
+    try {
+      await fs.promises.access(dirPath);
+    } catch {
+      // 目录不存在，创建它
+      await fs.promises.mkdir(dirPath, { recursive: true });
+      return; // 新创建的目录已经是空的，无需继续
+    }
+
+    // 读取目录内容
+    const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
+
+    // 删除所有文件和子目录
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name);
+
+      if (entry.isDirectory()) {
+        // 递归删除子目录内容
+        await clearDirectory(fullPath);
+        // 删除空目录
+        await fs.promises.rmdir(fullPath);
+      } else {
+        // 删除文件
+        await fs.promises.unlink(fullPath);
+      }
+    }
+
+    console.log(`[缓存清理] 已清理目录: ${dirPath}`);
+  } catch (error) {
+    console.error(`[缓存清理] 清理目录失败 ${dirPath}:`, error);
+    throw error;
+  }
+};
 
 // 这里可以添加应用程序的其他主进程代码
 // 也可以将它们放在单独的文件中并在这里导入
